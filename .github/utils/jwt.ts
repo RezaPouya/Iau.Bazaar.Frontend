@@ -1,15 +1,15 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'
 
 export const getTokenExpiration = (token: string): number => {
   try {
-    const decoded: any = jwtDecode(token);
+    const decoded: any = jwtDecode(token)
 
     if (!decoded.exp) {
-      return 0;
+      return 0
     }
 
-    return decoded.exp * 1000;
+    return decoded.exp * 1000
   } catch {
-    return 0;
+    return 0
   }
-};
+}

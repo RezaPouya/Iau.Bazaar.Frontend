@@ -1,9 +1,9 @@
-import { defineStore } from 'pinia';
-import { useAccountService } from '~/services/account.service';
+import { defineStore } from 'pinia'
+import { useAccountService } from '~/services/account.service'
 
-import type { AuthUser, LoginResponse } from '~/types/auth';
+import type { AuthUser, LoginResponse } from '~/types/auth'
 
-import { getTokenExpiration } from '~/utils/jwt';
+import { getTokenExpiration } from '~/utils/jwt'
 
 export const useAuthStore = defineStore('auth', () => {
   /*
@@ -12,15 +12,15 @@ export const useAuthStore = defineStore('auth', () => {
     |--------------------------------------------------------------------------
     */
 
-  const accessToken = ref('');
+  const accessToken = ref('')
 
-  const refreshToken = ref('');
+  const refreshToken = ref('')
 
-  const user = ref<AuthUser | null>(null);
+  const user = ref<AuthUser | null>(null)
 
-  const refreshTimeout = ref<NodeJS.Timeout | null>(null);
+  const refreshTimeout = ref<NodeJS.Timeout | null>(null)
 
-  const isRefreshing = ref(false);
+  const isRefreshing = ref(false)
 
   /*
     |--------------------------------------------------------------------------
@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     |--------------------------------------------------------------------------
     */
 
-  const isAuthenticated = computed(() => !!accessToken.value);
+  const isAuthenticated = computed(() => !!accessToken.value)
 
   /*
     |--------------------------------------------------------------------------
@@ -38,35 +38,35 @@ export const useAuthStore = defineStore('auth', () => {
 
   const restoreSession = () => {
     if (!process.client) {
-      return false;
+      return false
     }
 
-    const storedAccessToken = sessionStorage.getItem('access_token');
+    const storedAccessToken = sessionStorage.getItem('access_token')
 
-    const storedRefreshToken = sessionStorage.getItem('refresh_token');
+    const storedRefreshToken = sessionStorage.getItem('refresh_token')
 
-    const storedUser = sessionStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user')
 
     if (!storedAccessToken || !storedRefreshToken || !storedUser) {
-      return false;
+      return false
     }
 
     try {
-      accessToken.value = storedAccessToken;
+      accessToken.value = storedAccessToken
 
-      refreshToken.value = storedRefreshToken;
+      refreshToken.value = storedRefreshToken
 
-      user.value = JSON.parse(storedUser);
+      user.value = JSON.parse(storedUser)
 
-      scheduleRefresh();
+      scheduleRefresh()
 
-      return true;
+      return true
     } catch {
-      clearAuth();
+      clearAuth()
 
-      return false;
+      return false
     }
-  };
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -75,9 +75,9 @@ export const useAuthStore = defineStore('auth', () => {
     */
 
   const setAuth = (data: LoginResponse) => {
-    accessToken.value = data.accessToken;
+    accessToken.value = data.accessToken
 
-    refreshToken.value = data.refreshToken;
+    refreshToken.value = data.refreshToken
 
     user.value = {
       userId: data.userId,
@@ -85,17 +85,17 @@ export const useAuthStore = defineStore('auth', () => {
       panelUrl: data.panelUrl,
       fullName: data.fullName,
       userName: data.userName,
-      phoneNumber: data.phoneNumber,
-    };
+      phoneNumber: data.phoneNumber
+    }
 
-    sessionStorage.setItem('access_token', data.accessToken);
+    sessionStorage.setItem('access_token', data.accessToken)
 
-    sessionStorage.setItem('refresh_token', data.refreshToken);
+    sessionStorage.setItem('refresh_token', data.refreshToken)
 
-    sessionStorage.setItem('user', JSON.stringify(user.value));
+    sessionStorage.setItem('user', JSON.stringify(user.value))
 
-    scheduleRefresh();
-  };
+    scheduleRefresh()
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -104,24 +104,24 @@ export const useAuthStore = defineStore('auth', () => {
     */
 
   const clearAuth = () => {
-    accessToken.value = '';
+    accessToken.value = ''
 
-    refreshToken.value = '';
+    refreshToken.value = ''
 
-    user.value = null;
+    user.value = null
 
-    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('access_token')
 
-    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('refresh_token')
 
-    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('user')
 
     if (refreshTimeout.value) {
-      clearTimeout(refreshTimeout.value);
+      clearTimeout(refreshTimeout.value)
 
-      refreshTimeout.value = null;
+      refreshTimeout.value = null
     }
-  };
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -130,19 +130,19 @@ export const useAuthStore = defineStore('auth', () => {
     */
 
   const login = async (userName: string, password: string) => {
-    const service = useAccountService();
+    const service = useAccountService()
 
     const response = await service.signInByPassword({
       userName,
-      password,
-    });
+      password
+    })
 
     if (!response.isSuccess) {
-      throw new Error(response.message);
+      throw new Error(response.message)
     }
 
-    setAuth(response.data);
-  };
+    setAuth(response.data)
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -151,22 +151,22 @@ export const useAuthStore = defineStore('auth', () => {
     */
 
   const logout = async () => {
-    const toast = useAppToast();
+    const toast = useAppToast()
 
     try {
-      const { $api } = useNuxtApp();
+      const { $api } = useNuxtApp()
 
-      await $api.post('/account/logout');
+      await $api.post('/account/logout')
 
-      toast.success('خروج موفق', 'با موفقیت از حساب کاربری خارج شدید');
+      toast.success('خروج موفق', 'با موفقیت از حساب کاربری خارج شدید')
     } catch {
-      toast.error(' هشدار ', 'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد');
+      toast.error(' هشدار ', 'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد')
     } finally {
-      clearAuth();
+      clearAuth()
 
-      await navigateTo('/login');
+      await navigateTo('/login')
     }
-  };
+  }
   /*
     |--------------------------------------------------------------------------
     | Schedule Refresh
@@ -175,27 +175,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   const scheduleRefresh = () => {
     if (!accessToken.value) {
-      return;
+      return
     }
 
-    const expiration = getTokenExpiration(accessToken.value);
+    const expiration = getTokenExpiration(accessToken.value)
 
-    const timeout = expiration - Date.now() - 60000;
+    const timeout = expiration - Date.now() - 60000
 
     if (timeout <= 0) {
-      refreshAuthToken();
+      refreshAuthToken()
 
-      return;
+      return
     }
 
     if (refreshTimeout.value) {
-      clearTimeout(refreshTimeout.value);
+      clearTimeout(refreshTimeout.value)
     }
 
     refreshTimeout.value = setTimeout(async () => {
-      await refreshAuthToken();
-    }, timeout);
-  };
+      await refreshAuthToken()
+    }, timeout)
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -205,31 +205,31 @@ export const useAuthStore = defineStore('auth', () => {
 
   const refreshAuthToken = async () => {
     if (isRefreshing.value || !refreshToken.value) {
-      return;
+      return
     }
 
     try {
-      isRefreshing.value = true;
+      isRefreshing.value = true
 
-      const service = useAccountService();
+      const service = useAccountService()
 
       const response = await service.refreshToken({
-        refreshToken: refreshToken.value,
-      });
+        refreshToken: refreshToken.value
+      })
 
       if (!response.isSuccess) {
-        throw new Error(response.message);
+        throw new Error(response.message)
       }
 
-      setAuth(response.data);
+      setAuth(response.data)
     } catch {
-      clearAuth();
+      clearAuth()
 
-      await navigateTo('/login');
+      await navigateTo('/login')
     } finally {
-      isRefreshing.value = false;
+      isRefreshing.value = false
     }
-  };
+  }
 
   return {
     accessToken,
@@ -247,6 +247,6 @@ export const useAuthStore = defineStore('auth', () => {
     restoreSession,
 
     refreshAuthToken,
-    scheduleRefresh,
-  };
-});
+    scheduleRefresh
+  }
+})
