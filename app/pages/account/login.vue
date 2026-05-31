@@ -3,7 +3,6 @@
     <UCard class="w-full max-w-md shadow-lg">
       <template #header>
         <div class="text-center">
-          <!-- <h1 class="text-2xl font-bold text-primary-600">ورود به سامانه</h1> -->
           <p class="text-slate-500 dark:text-slate-600 mt-1">لطفاً وارد حساب کاربری خود شوید</p>
         </div>
       </template>
@@ -38,42 +37,77 @@
 
       <UForm :state="form" @submit="handleSubmit">
         <UFormField label="نام کاربری یا شماره همراه" name="username" required>
-          <UInput v-model="form.username"
-          placeholder="نام کاربری یا 09123456789"
-          size="lg"
-          class="w-full"
-          :disabled="loading" />
+          <UInput
+            v-model="form.username"
+            placeholder="نام کاربری یا 09123456789"
+            size="lg"
+            class="w-full"
+            input-class="!text-left"
+            :disabled="loading"
+          />
         </UFormField>
 
         <div class="mt-5">
-<UFormField v-if="activeTab === 'password'" label="رمز عبور" name="password" required>
-          <UInput v-model="form.password" type="password" placeholder="رمز عبور خود را وارد کنید" size="lg" class="w-full" :disabled="loading" />
-        </UFormField>
+          <UFormField v-if="activeTab === 'password'" label="رمز عبور" name="password" required>
+            <UInput
+              v-model="form.password"
+              type="password"
+              placeholder="رمز عبور خود را وارد کنید"
+              size="lg"
+              class="w-full"
+              input-class="!text-left"
+              :disabled="loading"
+            />
+          </UFormField>
 
-        <UFormField v-if="activeTab === 'otp'" label="رمز یکبار مصرف" name="otp" required>
-          <div class="flex gap-2 w-full">
-            <UInput v-model="form.otp" type="text" placeholder="کد ۶ رقمی" size="lg" class="flex-1 w-full" :disabled="loading || !otpSent" />
-            <UButton color="primary" variant="outline" :loading="sendingOtp" :disabled="!form.username || sendingOtp || otpCooldown > 0" @click="sendOtp">
-              {{ otpCooldown > 0 ? `${otpCooldown} ثانیه` : 'ارسال کد' }}
-            </UButton>
-          </div>
-          <p v-if="otpSent && !otpCooldown" class="text-sm text-green-600 mt-1">کد یکبار مصرف به شماره همراه شما ارسال شد.</p>
-        </UFormField>
+          <UFormField v-if="activeTab === 'otp'" label="رمز یکبار مصرف" name="otp" required>
+            <div class="flex gap-2 w-full">
+              <UInput
+                v-model="form.otp"
+                type="text"
+                placeholder="کد ۶ رقمی"
+                size="lg"
+                class="flex-1 w-full"
+                input-class="!text-left"
+                :disabled="loading || !otpSent"
+              />
+              <UButton
+                color="primary"
+                variant="outline"
+                :loading="sendingOtp"
+                :disabled="!form.username || sendingOtp || otpCooldown > 0"
+                @click="sendOtp"
+              >
+                {{ otpCooldown > 0 ? `${otpCooldown} ثانیه` : 'ارسال کد' }}
+              </UButton>
+            </div>
+            <p v-if="otpSent && !otpCooldown" class="text-sm text-green-600 mt-1">
+              کد یکبار مصرف به شماره همراه شما ارسال شد.
+            </p>
+          </UFormField>
         </div>
-
 
         <div v-if="error" class="mt-5">
           <UAlert color="red" :title="error" />
         </div>
 
         <div class="mt-5">
-            <UButton type="submit" color="primary" block size="lg" :loading="loading" :disabled="loading">
-              {{ loading ? 'در حال ورود...' : 'ورود' }}
-            </UButton>
+          <UButton
+            type="submit"
+            color="primary"
+            block
+            size="lg"
+            :loading="loading"
+            :disabled="loading"
+          >
+            {{ loading ? 'در حال ورود...' : 'ورود' }}
+          </UButton>
         </div>
 
         <div class="text-center text-sm mt-4">
-          <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline"> رمز عبور خود را فراموش کرده‌اید؟ </NuxtLink>
+          <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline">
+            رمز عبور خود را فراموش کرده‌اید؟
+          </NuxtLink>
         </div>
       </UForm>
     </UCard>
@@ -92,7 +126,7 @@ const otpCooldown = ref(0)
 const error = ref('')
 
 const form = reactive({
-  username: '', // fixed: was 'userName' -> now matches template
+  username: '',
   password: '',
   otp: ''
 })
@@ -137,5 +171,8 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* Optional: finer RTL adjustments if needed */
+/* Force text-left on all inputs inside this component */
+:deep(input) {
+  text-align: left !important;
+}
 </style>
