@@ -11,7 +11,8 @@ useHead({
   ],
   link: [{ rel: 'icon', href: '/favicon.ico' }],
   htmlAttrs: {
-    lang: 'en'
+    lang: 'en',
+    dir: 'rtl'
   }
 })
 

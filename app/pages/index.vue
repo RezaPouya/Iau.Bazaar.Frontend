@@ -20,6 +20,9 @@
               {{ auth.user?.role }}
             </UBadge>
           </p>
+          <p>
+            <button @click="lg.logout()" class="btn-danger">خروج</button>
+          </p>
         </div>
       </UCard>
     </UContainer>
@@ -28,6 +31,9 @@
 
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/auth'
+import { useLogout } from '~/composables/useLogout'
+
+const lg = useLogout()
 
 definePageMeta({
   layout: 'default',

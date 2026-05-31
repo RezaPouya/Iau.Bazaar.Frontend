@@ -1,7 +1,7 @@
-@import 'tailwindcss' theme(static);
+@import 'tailwindcss';
 @import '@nuxt/ui';
 
-@theme static {
+@theme {
   --font-sans: 'Public Sans', sans-serif;
 
   --color-green-50: #effdf5;
@@ -15,4 +15,69 @@
   --color-green-800: #016538;
   --color-green-900: #0a5331;
   --color-green-950: #052e16;
+}
+
+@font-face {
+  font-family: IRAN;
+  font-style: normal;
+  font-weight: bold;
+  src: url('../fonts/eot/IRANBold.eot');
+  src:
+    url('../fonts/eot/IRANBold.eot?#iefix') format('embedded-opentype'),
+    /* IE6-8 */ url('../fonts/woff2/IRANBold.woff2') format('woff2'),
+    /* FF39+,Chrome36+, Opera24+*/ url('../fonts/woff/IRANBold.woff') format('woff'),
+    /* FF3.6+, IE9, Chrome6+, Saf5.1+*/ url('../fonts/ttf/IRANBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: IRAN;
+  font-style: normal;
+  font-weight: 900;
+  src: url('../fonts/IRANBlack.eot');
+  src:
+    url('../fonts/IRANBlack.eot?#iefix') format('embedded-opentype'),
+    /* IE6-8 */ url('../fonts/IRANBlack.woff2') format('woff2'),
+    /* FF39+,Chrome36+, Opera24+*/ url('../fonts/IRANBlack.woff') format('woff'),
+    /* FF3.6+, IE9, Chrome6+, Saf5.1+*/ url('../fonts/IRANBlack.ttf') format('truetype');
+}
+@font-face {
+  font-family: IRAN;
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/IRAN_SemiBold.eot');
+  src:
+    url('../fonts/IRAN_SemiBold.eot?#iefix') format('embedded-opentype'),
+    /* IE6-8 */ url('../fonts/IRAN_SemiBold.woff2') format('woff2'),
+    /* FF39+,Chrome36+, Opera24+*/ url('../fonts/IRAN_SemiBold.woff') format('woff'),
+    /* FF3.6+, IE9, Chrome6+, Saf5.1+*/ url('../fonts/IRAN_SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: IRAN;
+  font-style: normal;
+  font-weight: normal;
+  src: url('../fonts/IRAN.eot');
+  src:
+    url('../fonts/IRAN.eot?#iefix') format('embedded-opentype'),
+    /* IE6-8 */ url('../fonts/IRAN.woff2') format('woff2'),
+    /* FF39+,Chrome36+, Opera24+*/ url('../fonts/IRAN.woff') format('woff'),
+    /* FF3.6+, IE9, Chrome6+, Saf5.1+*/ url('../fonts/IRAN.ttf') format('truetype');
+}
+
+body {
+  font-family: IRAN !important;
+  direction: rtl;
+  /* background-color: #E2E2E2;
+	margin: 0; */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+input,
+textarea {
+  font-family: IRAN !important;
 }
