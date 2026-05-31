@@ -37,14 +37,7 @@
 
       <UForm :state="form" @submit="handleSubmit">
         <UFormField label="نام کاربری یا شماره همراه" name="username" required>
-          <UInput
-            v-model="form.username"
-            placeholder="نام کاربری یا 09123456789"
-            size="lg"
-            class="w-full"
-            input-class="!text-left"
-            :disabled="loading"
-          />
+          <UInput v-model="form.username" placeholder="نام کاربری یا 09123456789" size="lg" class="w-full" input-class="!text-left" :disabled="loading" />
         </UFormField>
 
         <div class="mt-5">
@@ -71,43 +64,26 @@
                 input-class="!text-left"
                 :disabled="loading || !otpSent"
               />
-              <UButton
-                color="primary"
-                variant="outline"
-                :loading="sendingOtp"
-                :disabled="!form.username || sendingOtp || otpCooldown > 0"
-                @click="sendOtp"
-              >
+              <UButton color="primary" variant="outline" :loading="sendingOtp" :disabled="!form.username || sendingOtp || otpCooldown > 0" @click="sendOtp">
                 {{ otpCooldown > 0 ? `${otpCooldown} ثانیه` : 'ارسال کد' }}
               </UButton>
             </div>
-            <p v-if="otpSent && !otpCooldown" class="text-sm text-green-600 mt-1">
-              کد یکبار مصرف به شماره همراه شما ارسال شد.
-            </p>
+            <p v-if="otpSent && !otpCooldown" class="text-sm text-green-600 mt-1">کد یکبار مصرف به شماره همراه شما ارسال شد.</p>
           </UFormField>
         </div>
 
         <div v-if="error" class="mt-5">
-          <UAlert color="red" :title="error" />
+          <UAlert color="error" :title="error" />
         </div>
 
         <div class="mt-5">
-          <UButton
-            type="submit"
-            color="primary"
-            block
-            size="lg"
-            :loading="loading"
-            :disabled="loading"
-          >
+          <UButton type="submit" color="primary" block size="lg" :loading="loading" :disabled="loading">
             {{ loading ? 'در حال ورود...' : 'ورود' }}
           </UButton>
         </div>
 
         <div class="text-center text-sm mt-4">
-          <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline">
-            رمز عبور خود را فراموش کرده‌اید؟
-          </NuxtLink>
+          <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline"> رمز عبور خود را فراموش کرده‌اید؟ </NuxtLink>
         </div>
       </UForm>
     </UCard>
@@ -115,15 +91,14 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ middleware: 'guest' })
+
+const { $api } = useNuxtApp()
+const authStore = useAuthStore()
+const router = useRouter()
 const route = useRoute()
 
-// Reactive state
 const activeTab = ref(route.query.tab === 'otp' ? 'otp' : 'password')
-const loading = ref(false)
-const sendingOtp = ref(false)
-const otpSent = ref(false)
-const otpCooldown = ref(0)
-const error = ref('')
 
 const form = reactive({
   username: '',
@@ -131,43 +106,90 @@ const form = reactive({
   otp: ''
 })
 
-// Example handlers – replace with your actual logic
-const sendOtp = async () => {
-  sendingOtp.value = true
+const loading = ref(false)
+const error = ref('')
+const otpSent = ref(false)
+const sendingOtp = ref(false)
+const otpCooldown = ref(0)
+let cooldownTimer: NodeJS.Timeout
+
+const handleSubmit = async () => {
+  error.value = ''
+  loading.value = true
+
   try {
-    // await $api.post('/auth/send-otp', { mobile: form.username })
+    if (activeTab.value === 'password') {
+      if (!form.username || !form.password) {
+        error.value = 'لطفاً نام کاربری و رمز عبور را وارد کنید'
+        return
+      }
+      const response = await $api.post('/account/sign-in-by-password', {
+        userName: form.username,
+        password: form.password
+      })
+      const data = response.data.data
+      authStore.setAuth(data)
+      const redirect = sessionStorage.getItem('redirectAfterLogin') || data.panelUrl || '/'
+      sessionStorage.removeItem('redirectAfterLogin')
+      await router.push(redirect)
+    } else {
+      if (!form.username || !form.otp) {
+        error.value = 'لطفاً شماره همراه و کد یکبار مصرف را وارد کنید'
+        return
+      }
+      const response = await $api.post('/account/sign-in-by/otp', {
+        cellphone: form.username,
+        otp: form.otp
+      })
+      const data = response.data.data
+      authStore.setAuth(data)
+      const redirect = sessionStorage.getItem('redirectAfterLogin') || data.panelUrl || '/'
+      sessionStorage.removeItem('redirectAfterLogin')
+      await router.push(redirect)
+    }
+  } catch (err: any) {
+    console.error(err)
+    if (err.response?.status === 401) {
+      error.value = 'نام کاربری، رمز عبور یا کد وارد شده صحیح نیست'
+    } else if (err.code === 'ERR_NETWORK') {
+      error.value = 'خطا در ارتباط با سرور. لطفاً مجدد تلاش کنید'
+    } else {
+      error.value = err.response?.data?.message || 'خطا در ورود به سیستم'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const sendOtp = async () => {
+  if (!form.username) {
+    error.value = 'لطفاً شماره همراه خود را وارد کنید'
+    return
+  }
+  sendingOtp.value = true
+  error.value = ''
+  try {
+    await $api.post('/account/send-otp', { cellphone: form.username })
     otpSent.value = true
-    // start cooldown timer
-    otpCooldown.value = 120
-    const interval = setInterval(() => {
-      if (otpCooldown.value > 0) otpCooldown.value--
-      else clearInterval(interval)
+    otpCooldown.value = 60
+    cooldownTimer = setInterval(() => {
+      if (otpCooldown.value <= 1) {
+        clearInterval(cooldownTimer)
+        otpCooldown.value = 0
+      } else {
+        otpCooldown.value--
+      }
     }, 1000)
   } catch (err: any) {
-    error.value = err.message || 'خطا در ارسال کد'
+    error.value = err.response?.data?.message || 'ارسال کد با خطا مواجه شد'
   } finally {
     sendingOtp.value = false
   }
 }
 
-const handleSubmit = async () => {
-  loading.value = true
-  error.value = ''
-  try {
-    if (activeTab.value === 'password') {
-      // await authStore.login({ username: form.username, password: form.password })
-      console.log('Login with password', form)
-    } else {
-      // await authStore.loginWithOtp({ mobile: form.username, code: form.otp })
-      console.log('Login with OTP', form)
-    }
-    // router.push('/dashboard')
-  } catch (err: any) {
-    error.value = err.message || 'ورود ناموفق بود'
-  } finally {
-    loading.value = false
-  }
-}
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer)
+})
 </script>
 
 <style scoped>
