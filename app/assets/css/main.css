@@ -2,8 +2,7 @@
 @import '@nuxt/ui';
 
 @theme {
-  --font-sans: 'Public Sans', sans-serif;
-
+  --font-sans: 'IRAN', sans-serif;
   --color-green-50: #effdf5;
   --color-green-100: #d9fbe8;
   --color-green-200: #b3f5d1;
@@ -82,6 +81,7 @@ textarea {
   font-family: IRAN !important;
 }
 
-#loginUserName {
-  text-align: left !important;
+/* Force IRAN font on all text elements (except SVG icons) */
+*:not(svg):not(svg *) {
+  font-family: IRAN, sans-serif !important;
 }
