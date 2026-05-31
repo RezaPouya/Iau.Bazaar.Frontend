@@ -81,3 +81,7 @@ input,
 textarea {
   font-family: IRAN !important;
 }
+
+#loginUserName{
+  text-align: left !important;
+}

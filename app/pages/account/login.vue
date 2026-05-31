@@ -38,10 +38,15 @@
 
       <UForm :state="form" @submit="handleSubmit">
         <UFormField label="نام کاربری یا شماره همراه" name="username" required>
-          <UInput v-model="form.username" placeholder="نام کاربری یا 09123456789" size="lg" class="w-full" :disabled="loading" />
+          <UInput v-model="form.username"
+          placeholder="نام کاربری یا 09123456789"
+          size="lg"
+          class="w-full"
+          :disabled="loading" />
         </UFormField>
 
-        <UFormField v-if="activeTab === 'password'" label="رمز عبور" name="password" required>
+        <div class="mt-5">
+<UFormField v-if="activeTab === 'password'" label="رمز عبور" name="password" required>
           <UInput v-model="form.password" type="password" placeholder="رمز عبور خود را وارد کنید" size="lg" class="w-full" :disabled="loading" />
         </UFormField>
 
@@ -54,14 +59,18 @@
           </div>
           <p v-if="otpSent && !otpCooldown" class="text-sm text-green-600 mt-1">کد یکبار مصرف به شماره همراه شما ارسال شد.</p>
         </UFormField>
+        </div>
 
-        <div v-if="error" class="mt-2">
+
+        <div v-if="error" class="mt-5">
           <UAlert color="red" :title="error" />
         </div>
 
-        <UButton type="submit" color="primary" block size="lg" :loading="loading" :disabled="loading">
-          {{ loading ? 'در حال ورود...' : 'ورود' }}
-        </UButton>
+        <div class="mt-5">
+            <UButton type="submit" color="primary" block size="lg" :loading="loading" :disabled="loading">
+              {{ loading ? 'در حال ورود...' : 'ورود' }}
+            </UButton>
+        </div>
 
         <div class="text-center text-sm mt-4">
           <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline"> رمز عبور خود را فراموش کرده‌اید؟ </NuxtLink>
