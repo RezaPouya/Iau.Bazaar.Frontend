@@ -163,6 +163,7 @@ const clearFilters = () => {
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
 const form = reactive({
+  id: null as number | null, // add this line
   title: '',
   description: '',
   provinceId: 0,
@@ -171,6 +172,7 @@ const form = reactive({
 })
 
 const resetForm = () => {
+  form.id = null
   form.title = ''
   form.description = ''
   form.provinceId = provinces.value[0]?.id || 0
@@ -186,6 +188,7 @@ const openCreateModal = () => {
 
 const openEditModal = (university: any) => {
   editingId.value = university.id
+  form.id = university.id
   form.title = university.title
   form.description = university.description || ''
   form.provinceId = university.provinceId
