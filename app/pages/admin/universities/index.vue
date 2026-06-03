@@ -247,7 +247,7 @@ const confirmDelete = (id: number) => {
 }
 
 const goToEditPage = (id: number) => {
-  navigateTo(`panel/admin/universities/edit/${id}`)
+  navigateTo(`/admin/universities/edit/${id}`)
 }
 
 onMounted(() => {
