@@ -18,7 +18,7 @@ onMounted(() => {
     extensions: [StarterKit],
     onUpdate: ({ editor }) => {
       emit('update:modelValue', editor.getHTML())
-    },
+    }
   })
 })
 
@@ -26,29 +26,62 @@ onBeforeUnmount(() => {
   editor.value?.destroy()
 })
 
-watch(() => props.modelValue, (newValue) => {
-  if (editor.value && newValue !== editor.value.getHTML()) {
-    editor.value.commands.setContent(newValue || '')
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (editor.value && newValue !== editor.value.getHTML()) {
+      editor.value.commands.setContent(newValue || '')
+    }
   }
-})
+)
 </script>
 
 <template>
   <div class="border rounded-lg overflow-hidden">
     <div v-if="editor" class="border-b p-2 flex gap-1 flex-wrap">
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleBold().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bold') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleBold().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bold') }"
+      >
         <UIcon name="i-lucide-bold" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleItalic().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('italic') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleItalic().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('italic') }"
+      >
         <UIcon name="i-lucide-italic" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 2 }) }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 2 }) }"
+      >
         H2
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleBulletList().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bulletList') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleBulletList().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bulletList') }"
+      >
         <UIcon name="i-lucide-list" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleOrderedList().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('orderedList') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleOrderedList().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('orderedList') }"
+      >
         <UIcon name="i-lucide-list-ordered" />
       </UButton>
     </div>
@@ -64,7 +97,8 @@ watch(() => props.modelValue, (newValue) => {
 .tiptap p {
   margin: 0.5em 0;
 }
-.tiptap ul, .tiptap ol {
+.tiptap ul,
+.tiptap ol {
   padding-right: 1.5em;
 }
 </style>

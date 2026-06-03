@@ -1,8 +1,5 @@
-// composables/useGrid.ts
-import type { GridDataSourceRequest, GridDataSourceResult, GridSort, GridPropertyFilter } from '~/types/grid'
-
 export function useGrid<T = any>(fetchFn: (request: GridDataSourceRequest) => Promise<GridDataSourceResult<T>>) {
-  const data = ref<T[]>([])
+  const data = ref<T[]>([]) as Ref<T[]>
   const totals = ref(0)
   const totalPages = ref(0)
   const currentPage = ref(1)
@@ -23,15 +20,16 @@ export function useGrid<T = any>(fetchFn: (request: GridDataSourceRequest) => Pr
         }
       }
       const result = await fetchFn(request)
-      data.value = result.data
-      totals.value = result.totals
-      totalPages.value = result.totalPages
-      currentPage.value = result.page
-      pageSize.value = result.pageSize
+      data.value = result.data ?? []
+      totals.value = result.totals ?? 0
+      totalPages.value = result.totalPages ?? 0
+      currentPage.value = result.page ?? 1
+      pageSize.value = result.pageSize ?? 10
     } catch (error) {
-      console.error('Grid data fetch failed:', error)
+      console.error('Grid fetch error:', error)
       data.value = []
       totals.value = 0
+      totalPages.value = 0
     } finally {
       loading.value = false
     }
@@ -54,8 +52,13 @@ export function useGrid<T = any>(fetchFn: (request: GridDataSourceRequest) => Pr
     loadData()
   }
 
+  const setFilters = (newFilters: GridPropertyFilter[]) => {
+    filters.value = newFilters.filter((f) => f.value !== '' && f.value !== null && f.value !== undefined)
+    currentPage.value = 1
+    loadData()
+  }
+
   const addFilter = (filter: GridPropertyFilter) => {
-    // remove existing filter with same propertyName and operation
     filters.value = filters.value.filter((f) => !(f.propertyName === filter.propertyName && f.operation === filter.operation))
     if (filter.value !== '' && filter.value !== null && filter.value !== undefined) {
       filters.value.push(filter)
@@ -70,25 +73,25 @@ export function useGrid<T = any>(fetchFn: (request: GridDataSourceRequest) => Pr
     loadData()
   }
 
-  // Load initial data
   onMounted(() => {
     loadData()
   })
 
   return {
-    data,
-    totals,
-    totalPages,
-    currentPage,
-    pageSize,
-    loading,
-    sort,
-    filters,
+    data: readonly(data),
+    totals: readonly(totals),
+    totalPages: readonly(totalPages),
+    currentPage: readonly(currentPage),
+    pageSize: readonly(pageSize),
+    loading: readonly(loading),
+    sort: readonly(sort),
+    filters: readonly(filters),
     loadData,
     setPage,
     setPageSize,
     setSort,
     addFilter,
-    clearFilters
+    clearFilters,
+    setFilters
   }
 }

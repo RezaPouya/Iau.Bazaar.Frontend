@@ -117,7 +117,8 @@ function isActive(item: any) {
           <div class="flex items-center gap-2">
             <!-- Mobile menu button (optional) -->
             <UButton icon="i-lucide-menu" color="neutral" variant="ghost" class="lg:hidden" @click="isSidebarCollapsed = !isSidebarCollapsed" />
-            <UDashboardNavbarTitle>{{ pageTitle }} </UDashboardNavbarTitle>
+            <!-- <UDashboardNavbarTitle>{{ pageTitle }} </UDashboardNavbarTitle> -->
+            <span class="text-lg font-semibold">{{ pageTitle }}</span>
           </div>
 
           <div class="flex items-center gap-2">

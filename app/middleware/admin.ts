@@ -4,7 +4,7 @@ export default defineNuxtRouteMiddleware(() => {
   const auth = useAuthStore()
 
   if (!auth.user) {
-    return navigateTo('account/login')
+    return navigateTo('/account/login')
   }
 
   const role = auth.user.role
