@@ -7,17 +7,6 @@ definePageMeta({
   title: 'مدیریت دانشگاه‌ها'
 })
 
-// ---------- ستون‌ها ----------
-const columns = [
-  { key: 'id', label: 'شناسه', sortable: true },
-  { key: 'title', label: 'نام دانشگاه', sortable: true },
-  { key: 'provinceName', label: 'استان', sortable: true },
-  { key: 'isActive', label: 'فعال', sortable: true },
-  { key: 'isVisible', label: 'قابل نمایش', sortable: true },
-  { key: 'createdAtPersian', label: 'تاریخ ایجاد', sortable: true },
-  { key: 'actions', label: 'عملیات', sortable: false }
-]
-
 // ---------- دریافت استان‌ها ----------
 const provinces = ref<{ id: number; name: string }[]>([])
 const fetchProvinces = async () => {
@@ -31,7 +20,7 @@ const fetchProvinces = async () => {
 }
 onMounted(fetchProvinces)
 
-// ---------- فیلترها ----------
+// ---------- مقادیر فیلترها ----------
 const filterTitle = ref('')
 const filterProvinceId = ref<number | null>(null)
 const filterIsActive = ref<string | null>(null)
@@ -39,16 +28,13 @@ const filterIsVisible = ref<string | null>(null)
 
 // ---------- State grid ----------
 const data = ref<any[]>([])
-const totals = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
 const loading = ref(false)
-const sortKey = ref<string | null>(null)
-const sortDirection = ref<'asc' | 'desc' | null>(null)
+const error = ref<string | null>(null)
 
 // ---------- بارگذاری داده‌ها ----------
 const loadData = async () => {
   loading.value = true
+  error.value = null
   try {
     const { $api } = useNuxtApp()
     const filters: any[] = []
@@ -82,80 +68,28 @@ const loadData = async () => {
     }
 
     const request = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      inputParams: {
-        filters,
-        sort: sortKey.value && sortDirection.value ? {
-          propertyName: sortKey.value,
-          ascending: sortDirection.value === 'asc'
-        } : null
-      }
+      page: 1,
+      pageSize: 10,
+      inputParams: { filters, sort: null }
     }
     const response = await $api.post('panel/admin/universities/list', request)
-    const result = response.data
-    data.value = result.data ?? []
-    totals.value = result.totals ?? 0
-    currentPage.value = result.page ?? 1
-    pageSize.value = result.pageSize ?? 10
+    data.value = response.data.data ?? []
   } catch (err: any) {
-    console.error('خطا:', err)
+    console.error('❌ API error:', err)
+    error.value = err.response?.data?.message || err.message || 'خطا در بارگذاری اطلاعات'
     data.value = []
-    totals.value = 0
   } finally {
     loading.value = false
   }
 }
 
-// ---------- صفحه‌بندی ----------
-const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
-const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totals.value))
-
-const setPage = (page: number) => {
-  currentPage.value = page
-  loadData()
-}
-
-const setPageSize = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1
-  loadData()
-}
-
-// ---------- مرتب‌سازی ----------
-const setSort = (key: string) => {
-  if (sortKey.value === key) {
-    if (sortDirection.value === 'asc') sortDirection.value = 'desc'
-    else if (sortDirection.value === 'desc') sortDirection.value = null
-    else sortDirection.value = 'asc'
-  } else {
-    sortKey.value = key
-    sortDirection.value = 'asc'
-  }
-  currentPage.value = 1
-  loadData()
-}
-
-const getSortIcon = (key: string) => {
-  if (sortKey.value !== key) return 'i-lucide-arrow-up-down'
-  if (sortDirection.value === 'asc') return 'i-lucide-arrow-up'
-  if (sortDirection.value === 'desc') return 'i-lucide-arrow-down'
-  return 'i-lucide-arrow-up-down'
-}
-
-// ---------- فیلترها ----------
-const applyFilters = () => {
-  currentPage.value = 1
-  loadData()
-}
-
+// ---------- اعمال فیلترها ----------
+const applyFilters = () => loadData()
 const clearFilters = () => {
   filterTitle.value = ''
   filterProvinceId.value = null
   filterIsActive.value = null
   filterIsVisible.value = null
-  currentPage.value = 1
   loadData()
 }
 
@@ -307,110 +241,76 @@ onMounted(() => {
         </div>
       </UCard>
 
+      <!-- خطا -->
+      <UAlert v-if="error" color="error" :title="error" class="mb-4" />
+
       <!-- لودینگ -->
       <UCard v-if="loading" class="flex justify-center py-8">
         <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin mx-auto" />
       </UCard>
 
-      <div v-else>
-        <!-- جدول -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th
-                  v-for="col in columns"
-                  :key="col.key"
-                  class="px-4 py-2 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                  @click="col.sortable && setSort(col.key)"
-                >
-                  <div class="flex items-center justify-center gap-1">
-                    {{ col.label }}
-                    <UIcon v-if="col.sortable" :name="getSortIcon(col.key)" class="size-4" />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-4 py-2 text-center">{{ item.id }}</td>
-                <td class="px-4 py-2 text-center">{{ item.title }}</td>
-                <td class="px-4 py-2 text-center">{{ item.provinceName }}</td>
-                <td class="px-4 py-2 text-center">
-                  <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle">
-                    {{ item.isActive ? 'فعال' : 'غیرفعال' }}
-                  </UBadge>
-                </td>
-                <td class="px-4 py-2 text-center">
-                  <UBadge :color="item.isVisible ? 'success' : 'neutral'" variant="subtle">
-                    {{ item.isVisible ? 'نمایش' : 'مخفی' }}
-                  </UBadge>
-                </td>
-                <td class="px-4 py-2 text-center">{{ item.createdAtPersian }}</td>
-                <td class="px-4 py-2 text-center">
-                  <div class="flex flex-col gap-2 w-32 mx-auto">
-                    <UButton size="sm" color="neutral" variant="outline" @click="openEditModal(item)">
-                      <UIcon name="i-lucide-edit" class="ml-1" /> ویرایش
-                    </UButton>
-                    <UButton size="sm" color="neutral" variant="outline" @click="showPreview(item.description)">
-                      <UIcon name="i-lucide-eye" class="ml-1" /> پیش‌نمایش
-                    </UButton>
-                    <UButton size="sm" color="error" variant="outline" @click="confirmDelete(item.id)">
-                      <UIcon name="i-lucide-trash" class="ml-1" /> حذف
-                    </UButton>
-                    <UButton size="sm" color="primary" variant="outline" @click="goToEditPage(item.id)">
-                      <UIcon name="i-lucide-file-text" class="ml-1" /> ویرایش صفحه
-                    </UButton>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-4 py-8 text-center text-gray-500">
-                  هیچ داده‌ای یافت نشد
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- صفحه‌بندی -->
-        <div v-if="totalPages > 0" class="flex justify-between items-center mt-4">
-          <div class="text-sm text-gray-500">
-            {{ startIndex }} - {{ endIndex }} از {{ totals }}
-          </div>
-          <div class="flex gap-2 items-center">
-            <UButton
-              icon="i-lucide-chevron-right"
-              color="neutral"
-              variant="ghost"
-              :disabled="currentPage <= 1"
-              @click="setPage(currentPage - 1)"
-            />
-            <span class="text-sm">صفحه {{ currentPage }} از {{ totalPages }}</span>
-            <UButton
-              icon="i-lucide-chevron-left"
-              color="neutral"
-              variant="ghost"
-              :disabled="currentPage >= totalPages"
-              @click="setPage(currentPage + 1)"
-            />
-            <USelect
-              v-model="pageSize"
-              :items="[10, 20, 50, 100]"
-              size="sm"
-              class="w-24"
-              @update:model-value="setPageSize"
-            />
-          </div>
-        </div>
+      <!-- جدول با استایل‌های جدید -->
+      <div v-else-if="data.length > 0" class="overflow-x-auto">
+        <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th class="px-4 py-2 text-center border-b">شناسه</th>
+              <th class="px-4 py-2 text-center border-b">نام دانشگاه</th>
+              <th class="px-4 py-2 text-center border-b">استان</th>
+              <th class="px-4 py-2 text-center border-b">فعال</th>
+              <th class="px-4 py-2 text-center border-b">قابل نمایش</th>
+              <th class="px-4 py-2 text-center border-b">تاریخ ایجاد</th>
+              <th class="px-4 py-2 text-center border-b">عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-2 text-center">{{ item.id }}</td>
+              <td class="px-4 py-2 text-center">{{ item.title }}</td>
+              <td class="px-4 py-2 text-center">{{ item.provinceName }}</td>
+              <td class="px-4 py-2 text-center">
+                <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle">
+                  {{ item.isActive ? 'فعال' : 'غیرفعال' }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-2 text-center">
+                <UBadge :color="item.isVisible ? 'success' : 'neutral'" variant="subtle">
+                  {{ item.isVisible ? 'نمایش' : 'مخفی' }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-2 text-center">{{ item.createdAtPersian }}</td>
+              <td class="px-4 py-2 text-center">
+                <div class="flex flex-col gap-2 w-32 mx-auto">
+                  <UButton size="sm" color="neutral" variant="outline" @click="openEditModal(item)">
+                    <UIcon name="i-lucide-edit" class="ml-1" /> ویرایش
+                  </UButton>
+                  <UButton size="sm" color="neutral" variant="outline" @click="showPreview(item.description)">
+                    <UIcon name="i-lucide-eye" class="ml-1" /> پیش‌نمایش
+                  </UButton>
+                  <UButton size="sm" color="error" variant="outline" @click="confirmDelete(item.id)">
+                    <UIcon name="i-lucide-trash" class="ml-1" /> حذف
+                  </UButton>
+                  <UButton size="sm" color="primary" variant="outline" @click="goToEditPage(item.id)">
+                    <UIcon name="i-lucide-file-text" class="ml-1" /> ویرایش صفحه
+                  </UButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- مودال‌ها -->
+      <!-- داده‌ای وجود ندارد -->
+      <UCard v-else class="text-center py-8">
+        <p class="text-gray-500">هیچ داده‌ای یافت نشد</p>
+      </UCard>
+
+      <!-- مودال‌ها (بدون تغییر) -->
       <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-4xl">
         <template #body>
           <UForm :state="form" @submit="submitForm" class="space-y-4">
             <UFormField label="نام دانشگاه" required>
-              <UInput v-model="form.title" class="w-full" />
+              <UInput v-model="form.title" class="w-full text-center" />
             </UFormField>
             <UFormField label="استان" required>
               <USelect
@@ -447,3 +347,16 @@ onMounted(() => {
     </div>
   </ClientOnly>
 </template>
+
+<style scoped>
+/* اضافی برای اطمینان از راست‌چینی کامل dropdownها */
+:deep(.reka-popper-content) {
+  text-align: right;
+}
+:deep(.reka-select-content) {
+  text-align: right;
+}
+:deep(.reka-dropdown-menu-content) {
+  text-align: right;
+}
+</style>
