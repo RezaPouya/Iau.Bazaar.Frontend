@@ -24,7 +24,7 @@ const provinces = ref<{ id: number; name: string }[]>([])
 const fetchProvinces = async () => {
   const { $api } = useNuxtApp()
   try {
-    const response = await $api.get('/api/admin/dropdowns/provinces')
+    const response = await $api.get('panel/admin/drop-downs/provinces')
     provinces.value = response.data.data
   } catch (error) {
     console.error('خطا در دریافت استان‌ها', error)
@@ -135,10 +135,10 @@ const submitForm = async () => {
   const toast = useToast()
   try {
     if (editingId.value) {
-      await $api.put(`/api/admin/universities/${editingId.value}`, form)
+      await $api.put(`panel/admin/universities/${editingId.value}`, form)
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
-      await $api.post('/api/admin/universities', form)
+      await $api.post('panel/admin/universities', form)
       toast.add({ title: 'ایجاد موفق', color: 'success' })
     }
     modalOpen.value = false
@@ -161,7 +161,7 @@ const deleteUniversity = async (id: number) => {
   const { $api } = useNuxtApp()
   const toast = useToast()
   try {
-    await $api.delete(`/api/admin/universities/${id}`)
+    await $api.delete(`panel/admin/universities/${id}`)
     toast.add({ title: 'حذف موفق', color: 'success' })
     grid.loadData()
   } catch (error: any) {
@@ -184,7 +184,7 @@ const confirmDelete = (id: number) => {
 
 // ویرایش صفحه (رفتن به صفحه اختصاصی)
 const goToEditPage = (id: number) => {
-  navigateTo(`/admin/universities/edit/${id}`)
+  navigateTo(`panel/admin/universities/edit/${id}`)
 }
 </script>
 
