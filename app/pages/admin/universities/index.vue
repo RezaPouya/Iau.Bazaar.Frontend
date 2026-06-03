@@ -8,7 +8,7 @@ definePageMeta({
   title: 'مدیریت دانشگاه‌ها'
 })
 
-// Column definitions
+// ---------- ستون‌های جدول ----------
 const columns = [
   { accessorKey: 'id', header: 'شناسه', sortable: true },
   { accessorKey: 'title', header: 'نام دانشگاه', sortable: true },
@@ -19,27 +19,26 @@ const columns = [
   { accessorKey: 'actions', header: 'عملیات', sortable: false },
 ]
 
-// ---- Fetch provinces from backend ----
+// ---------- دریافت استان‌ها ----------
 const provinces = ref<{ id: number; name: string }[]>([])
 const fetchProvinces = async () => {
   const { $api } = useNuxtApp()
   try {
-    // Adjust the endpoint according to your backend (e.g., /api/geo/provinces)
-    const response = await $api.get('/api/geo/provinces')
+    const response = await $api.get('/api/admin/dropdowns/provinces')
     provinces.value = response.data.data
   } catch (error) {
-    console.error('Failed to fetch provinces', error)
+    console.error('خطا در دریافت استان‌ها', error)
   }
 }
 onMounted(fetchProvinces)
 
-// ---- Filter values (for UI binding) ----
+// ---------- مقادیر فیلترها (غیر خودکار) ----------
 const filterTitle = ref('')
 const filterProvinceId = ref<number | null>(null)
-const filterIsActive = ref<string | null>(null)   // 'true' / 'false' / null
-const filterIsVisible = ref<string | null>(null) // 'true' / 'false' / null
+const filterIsActive = ref<string | null>(null)
+const filterIsVisible = ref<string | null>(null)
 
-// API call
+// ---------- منطق Grid ----------
 const fetchUniversities = async (request: GridDataSourceRequest) => {
   const { $api } = useNuxtApp()
   const response = await $api.post<ApiResponse<GridDataSourceResult<any>>>(
@@ -48,23 +47,16 @@ const fetchUniversities = async (request: GridDataSourceRequest) => {
   )
   return response.data.data
 }
-
-// Use the grid composable
 const grid = useGrid(fetchUniversities)
 
-// Helper to apply all current filters (called whenever any filter changes)
+// اعمال فیلترها (با دکمه)
 const applyFilters = () => {
-  // Remove existing filters for these properties
+  // پاک کردن فیلترهای قبلی
   const properties = ['title', 'provinceId', 'isActive', 'isVisible']
   properties.forEach(prop => {
-    grid.addFilter({
-      propertyName: prop,
-      operation: GridFilterOperation.Equals,
-      value: ''
-    })
+    grid.addFilter({ propertyName: prop, operation: GridFilterOperation.Equals, value: '' })
   })
 
-  // Title filter (contains)
   if (filterTitle.value.trim()) {
     grid.addFilter({
       propertyName: 'title',
@@ -72,17 +64,13 @@ const applyFilters = () => {
       value: filterTitle.value.trim()
     })
   }
-
-  // Province filter (equals to province ID)
-  if (filterProvinceId.value !== null && filterProvinceId.value !== undefined) {
+  if (filterProvinceId.value !== null) {
     grid.addFilter({
       propertyName: 'provinceId',
       operation: GridFilterOperation.Equals,
       value: String(filterProvinceId.value)
     })
   }
-
-  // IsActive filter (boolean)
   if (filterIsActive.value !== null) {
     grid.addFilter({
       propertyName: 'isActive',
@@ -90,8 +78,6 @@ const applyFilters = () => {
       value: filterIsActive.value
     })
   }
-
-  // IsVisible filter (boolean)
   if (filterIsVisible.value !== null) {
     grid.addFilter({
       propertyName: 'isVisible',
@@ -99,34 +85,162 @@ const applyFilters = () => {
       value: filterIsVisible.value
     })
   }
-
-  // Force reload (addFilter already calls loadData)
 }
 
-// Clear all filters
-const clearAllFilters = () => {
+const clearFilters = () => {
   filterTitle.value = ''
   filterProvinceId.value = null
   filterIsActive.value = null
   filterIsVisible.value = null
-  grid.clearFilters() // this clears all filters and reloads data
+  grid.clearFilters()
 }
 
-// Watch for changes to any filter value and re-apply
-watch([filterTitle, filterProvinceId, filterIsActive, filterIsVisible], () => {
-  applyFilters()
-}, { deep: true })
+// ---------- مودال افزودن / ویرایش دانشگاه ----------
+const modalOpen = ref(false)
+const editingId = ref<number | null>(null)
+const form = reactive({
+  title: '',
+  description: '',
+  provinceId: 0,
+  isActive: true,
+  isVisible: true
+})
+
+const resetForm = () => {
+  form.title = ''
+  form.description = ''
+  form.provinceId = provinces.value[0]?.id || 0
+  form.isActive = true
+  form.isVisible = true
+  editingId.value = null
+}
+
+const openCreateModal = () => {
+  resetForm()
+  modalOpen.value = true
+}
+
+const openEditModal = async (university: any) => {
+  editingId.value = university.id
+  form.title = university.title
+  form.description = university.description || ''
+  form.provinceId = university.provinceId
+  form.isActive = university.isActive
+  form.isVisible = university.isVisible
+  modalOpen.value = true
+}
+
+const submitForm = async () => {
+  const { $api } = useNuxtApp()
+  const toast = useToast()
+  try {
+    if (editingId.value) {
+      await $api.put(`/api/admin/universities/${editingId.value}`, form)
+      toast.add({ title: 'بروزرسانی موفق', color: 'success' })
+    } else {
+      await $api.post('/api/admin/universities', form)
+      toast.add({ title: 'ایجاد موفق', color: 'success' })
+    }
+    modalOpen.value = false
+    grid.loadData()
+  } catch (error: any) {
+    toast.add({ title: error.response?.data?.message || 'خطا در ذخیره', color: 'error' })
+  }
+}
+
+// پیش‌نمایش (با دیالوگ ساده)
+const previewHtml = ref('')
+const previewOpen = ref(false)
+const showPreview = (description: string) => {
+  previewHtml.value = description
+  previewOpen.value = true
+}
+
+// حذف با تأیید
+const deleteUniversity = async (id: number) => {
+  const { $api } = useNuxtApp()
+  const toast = useToast()
+  try {
+    await $api.delete(`/api/admin/universities/${id}`)
+    toast.add({ title: 'حذف موفق', color: 'success' })
+    grid.loadData()
+  } catch (error: any) {
+    toast.add({ title: error.response?.data?.message || 'خطا در حذف', color: 'error' })
+  }
+}
+
+const confirmDelete = (id: number) => {
+  const toast = useToast()
+  toast.add({
+    title: 'تأیید حذف',
+    description: 'آیا از حذف این دانشگاه اطمینان دارید؟',
+    color: 'error',
+    actions: [
+      { label: 'بله', onClick: () => deleteUniversity(id) },
+      { label: 'خیر', onClick: () => {} }
+    ]
+  })
+}
+
+// ویرایش صفحه (رفتن به صفحه اختصاصی)
+const goToEditPage = (id: number) => {
+  navigateTo(`/admin/universities/edit/${id}`)
+}
 </script>
 
 <template>
   <div>
+    <!-- هدر و دکمه افزودن -->
     <div class="mb-4 flex justify-between items-center">
       <h1 class="text-2xl font-bold">مدیریت دانشگاه‌ها</h1>
-      <UButton color="primary" @click="() => {}">
+      <UButton color="primary" @click="openCreateModal">
         افزودن دانشگاه
       </UButton>
     </div>
 
+    <!-- نوار فیلترها (با دکمه مجزا) -->
+    <UCard class="mb-4">
+      <div class="flex flex-wrap gap-3 items-end">
+        <UFormField label="نام دانشگاه" class="flex-1 min-w-[200px]">
+          <UInput v-model="filterTitle" placeholder="جستجو..." class="w-full" />
+        </UFormField>
+        <UFormField label="استان" class="w-48">
+          <USelect
+            v-model="filterProvinceId"
+            :items="[{ label: 'همه استان‌ها', value: null }, ...provinces.map(p => ({ label: p.name, value: p.id }))]"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField label="فعال" class="w-36">
+          <USelect
+            v-model="filterIsActive"
+            :items="[
+              { label: 'همه', value: null },
+              { label: 'فعال', value: 'true' },
+              { label: 'غیرفعال', value: 'false' }
+            ]"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField label="قابل نمایش" class="w-36">
+          <USelect
+            v-model="filterIsVisible"
+            :items="[
+              { label: 'همه', value: null },
+              { label: 'نمایش', value: 'true' },
+              { label: 'مخفی', value: 'false' }
+            ]"
+            class="w-full"
+          />
+        </UFormField>
+        <div class="flex gap-2">
+          <UButton @click="applyFilters">اعمال فیلترها</UButton>
+          <UButton color="neutral" variant="ghost" @click="clearFilters">حذف فیلترها</UButton>
+        </div>
+      </div>
+    </UCard>
+
+    <!-- جدول داده‌ها -->
     <DataGrid
       :columns="columns"
       :data="grid.data.value"
@@ -139,90 +253,82 @@ watch([filterTitle, filterProvinceId, filterIsActive, filterIsVisible], () => {
       @update:page="grid.setPage"
       @update:page-size="grid.setPageSize"
       @update:sort="grid.setSort"
-      @add-filter="grid.addFilter"
-      @clear-filters="grid.clearFilters"
     >
-      <!-- Custom cell for isActive -->
+      <!-- وضعیت فعال -->
       <template #cell-isActive="{ value }">
         <UBadge :color="value ? 'success' : 'error'" variant="subtle">
           {{ value ? 'فعال' : 'غیرفعال' }}
         </UBadge>
       </template>
 
-      <!-- Custom cell for isVisible -->
+      <!-- وضعیت قابل نمایش -->
       <template #cell-isVisible="{ value }">
         <UBadge :color="value ? 'success' : 'neutral'" variant="subtle">
           {{ value ? 'نمایش' : 'مخفی' }}
         </UBadge>
       </template>
 
-      <!-- Actions -->
+      <!-- دکمه‌های عمودی با عرض یکسان -->
       <template #cell-actions="{ row }">
-        <div class="flex gap-2">
-          <UButton icon="i-lucide-edit" size="xs" color="neutral" variant="ghost" />
-          <UButton icon="i-lucide-trash" size="xs" color="error" variant="ghost" />
-        </div>
-      </template>
-
-      <!-- Filters toolbar -->
-      <template #filters>
-        <div class="flex flex-wrap gap-3 items-end">
-          <!-- Title search -->
-          <UFormField label="نام دانشگاه" class="w-64">
-            <UInput
-              v-model="filterTitle"
-              placeholder="جستجو..."
-              class="w-full"
-            />
-          </UFormField>
-
-          <!-- Province select -->
-          <UFormField label="استان" class="w-48">
-            <USelect
-              v-model="filterProvinceId"
-              :items="[
-                { label: 'همه استان‌ها', value: null },
-                ...provinces.map(p => ({ label: p.name, value: p.id }))
-              ]"
-              placeholder="انتخاب استان"
-            />
-          </UFormField>
-
-          <!-- IsActive filter -->
-          <UFormField label="وضعیت فعال" class="w-36">
-            <USelect
-              v-model="filterIsActive"
-              :items="[
-                { label: 'همه', value: null },
-                { label: 'فعال', value: 'true' },
-                { label: 'غیرفعال', value: 'false' }
-              ]"
-            />
-          </UFormField>
-
-          <!-- IsVisible filter -->
-          <UFormField label="قابل نمایش" class="w-36">
-            <USelect
-              v-model="filterIsVisible"
-              :items="[
-                { label: 'همه', value: null },
-                { label: 'نمایش', value: 'true' },
-                { label: 'مخفی', value: 'false' }
-              ]"
-            />
-          </UFormField>
-
-          <!-- Clear filters button -->
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-eraser"
-            @click="clearAllFilters"
-          >
-            حذف فیلترها
+        <div class="flex flex-col gap-2 w-32">
+          <UButton size="sm" color="neutral" variant="outline" @click="openEditModal(row)">
+            <UIcon name="i-lucide-edit" class="ml-1" /> ویرایش
+          </UButton>
+          <UButton size="sm" color="neutral" variant="outline" @click="showPreview(row.description)">
+            <UIcon name="i-lucide-eye" class="ml-1" /> پیش‌نمایش
+          </UButton>
+          <UButton size="sm" color="error" variant="outline" @click="confirmDelete(row.id)">
+            <UIcon name="i-lucide-trash" class="ml-1" /> حذف
+          </UButton>
+          <UButton size="sm" color="primary" variant="outline" @click="goToEditPage(row.id)">
+            <UIcon name="i-lucide-file-text" class="ml-1" /> ویرایش صفحه
           </UButton>
         </div>
       </template>
     </DataGrid>
+
+    <!-- مودال افزودن/ویرایش دانشگاه -->
+    <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-4xl">
+      <template #body>
+        <UForm :state="form" @submit="submitForm" class="space-y-4">
+          <UFormField label="نام دانشگاه" required>
+            <UInput v-model="form.title" class="w-full" />
+          </UFormField>
+
+          <UFormField label="استان" required>
+            <USelect
+              v-model="form.provinceId"
+              :items="provinces.map(p => ({ label: p.name, value: p.id }))"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField label="توضیحات (HTML)">
+            <RichTextEditor v-model="form.description" />
+          </UFormField>
+
+          <div class="flex gap-4">
+            <UFormField label="فعال" class="flex-1">
+              <USwitch v-model="form.isActive" />
+            </UFormField>
+            <UFormField label="قابل نمایش" class="flex-1">
+              <USwitch v-model="form.isVisible" />
+            </UFormField>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4">
+            <UButton color="neutral" variant="ghost" @click="modalOpen = false">انصراف</UButton>
+            <UButton type="submit" color="primary">ذخیره</UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+
+    <!-- مودال پیش‌نمایش HTML -->
+    <UModal v-model:open="previewOpen" title="پیش‌نمایش توضیحات" class="max-w-4xl">
+      <template #body>
+        <div class="prose prose-sm dark:prose-invert max-w-none" v-html="previewHtml" />
+      </template>
+    </UModal>
   </div>
 </template>
