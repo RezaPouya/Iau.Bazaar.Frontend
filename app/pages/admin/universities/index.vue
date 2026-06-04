@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { GridFilterOperation } from '~/types/grid'
+import UniversityFormModal from '~/components/admin/university/UniversityFormModal.vue'
+import UniversityPreviewModal from '~/components/admin/university/UniversityPreviewModal.vue'
 
 definePageMeta({
   layout: 'admin',
@@ -159,69 +161,44 @@ const clearFilters = () => {
   loadData()
 }
 
-// ---------- مودال افزودن / ویرایش ----------
-const modalOpen = ref(false)
-const editingId = ref<number | null>(null)
-const form = reactive({
-  id: null as number | null,
-  title: '',
-  description: '',
-  provinceId: 0,
-  isActive: true,
-  isVisible: true
-})
-
-const resetForm = () => {
-  form.id = null
-  form.title = ''
-  form.description = ''
-  form.provinceId = provinces.value[0]?.id || 0
-  form.isActive = true
-  form.isVisible = true
-  editingId.value = null
-}
+// ---------- Modal state ----------
+const formModalOpen = ref(false)
+const editingUniversity = ref<any>(null)
+const previewModalOpen = ref(false)
+const previewHtml = ref('')
 
 const openCreateModal = () => {
-  resetForm()
-  modalOpen.value = true
+  editingUniversity.value = null
+  formModalOpen.value = true
 }
 
 const openEditModal = (university: any) => {
-  editingId.value = university.id
-  form.id = university.id
-  form.title = university.title
-  form.description = university.description || ''
-  form.provinceId = university.provinceId
-  form.isActive = university.isActive
-  form.isVisible = university.isVisible
-  modalOpen.value = true
+  editingUniversity.value = university
+  formModalOpen.value = true
 }
 
-const submitForm = async () => {
+const showPreview = (description: string) => {
+  previewHtml.value = description
+  previewModalOpen.value = true
+}
+
+const handleSave = async (formData: any) => {
   const { $api } = useNuxtApp()
   const toast = useToast()
   try {
-    if (editingId.value) {
-      await $api.put(`panel/admin/universities/${editingId.value}`, form)
+    if (formData.id) {
+      await $api.put(`panel/admin/universities/${formData.id}`, formData)
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
-      const { id, ...createData } = form
+      const { id, ...createData } = formData
       await $api.post('panel/admin/universities', createData)
       toast.add({ title: 'ایجاد موفق', color: 'success' })
     }
-    modalOpen.value = false
+    formModalOpen.value = false
     loadData()
   } catch (error: any) {
     toast.add({ title: error.response?.data?.message || 'خطا در ذخیره', color: 'error' })
   }
-}
-
-// پیش‌نمایش
-const previewHtml = ref('')
-const previewOpen = ref(false)
-const showPreview = (description: string) => {
-  previewHtml.value = description
-  previewOpen.value = true
 }
 
 // حذف
@@ -426,51 +403,25 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- مودال افزودن/ویرایش (RTL inputs) -->
-      <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-3xl">
-        <template #body>
-          <UForm :state="form" @submit="submitForm" class="space-y-3">
-            <UFormField label="نام دانشگاه" required>
-              <UInput v-model="form.title" class="w-full text-right" />
-            </UFormField>
-            <UFormField label="استان" required>
-              <USelect
-                v-model="form.provinceId"
-                :items="provinces.map((p) => ({ label: p.name, value: p.id }))"
-                class="w-full"
-                :popper="{ placement: 'bottom-end' }"
-              />
-            </UFormField>
-            <UFormField label="توضیحات (HTML)">
-              <RichTextEditor v-model="form.description" />
-            </UFormField>
-            <div class="flex gap-4">
-              <UFormField label="فعال" class="flex-1">
-                <USwitch v-model="form.isActive" />
-              </UFormField>
-              <UFormField label="قابل نمایش" class="flex-1">
-                <USwitch v-model="form.isVisible" />
-              </UFormField>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <UButton color="neutral" variant="ghost" @click="modalOpen = false">انصراف</UButton>
-              <UButton type="submit" color="primary">ذخیره</UButton>
-            </div>
-          </UForm>
-        </template>
-      </UModal>
+      <!-- Modals -->
+      <UniversityFormModal
+        v-model:open="formModalOpen"
+        :editing-id="editingUniversity?.id || null"
+        :initial-data="editingUniversity || undefined"
+        :provinces="provinces"
+        @save="handleSave"
+      />
 
-      <UModal v-model:open="previewOpen" title="پیش‌نمایش توضیحات" class="max-w-3xl">
-        <template #body>
-          <div class="prose prose-sm dark:prose-invert max-w-none" v-html="previewHtml" />
-        </template>
-      </UModal>
+      <UniversityPreviewModal
+        v-model:open="previewModalOpen"
+        :html-content="previewHtml"
+      />
     </div>
   </ClientOnly>
 </template>
 
 <style scoped>
-/* فشرده‌سازی بیشتر */
+/* فشرده‌سازی */
 .compact-grid :deep(.p-4) {
   padding: 0.75rem !important;
 }
@@ -481,10 +432,17 @@ onMounted(() => {
 :deep(input),
 :deep(textarea),
 :deep(.reka-select-trigger) {
-  text-align: right !important;
+  text-align: left !important;
 }
-/* تنظیمات اضافی برای رفع LTR */
+
 :deep(.reka-select-value) {
   text-align: right;
+}
+table {
+  min-height: 200px !important;
+}
+
+tr, tbody{
+  vertical-align: top !important;
 }
 </style>
