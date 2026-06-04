@@ -40,12 +40,12 @@ export const useAuthStore = defineStore('auth', () => {
     if (!process.client) {
       return false
     }
-
-    const storedAccessToken = sessionStorage.getItem('access_token')
-
-    const storedRefreshToken = sessionStorage.getItem('refresh_token')
-
-    const storedUser = sessionStorage.getItem('user')
+    const storedAccessToken = localStorage.getItem('access_token')
+    const storedRefreshToken = localStorage.getItem('refresh_token')
+    const storedUser = localStorage.getItem('user')
+    // const storedAccessToken = sessionStorage.getItem('access_token')
+    // const storedRefreshToken = sessionStorage.getItem('refresh_token')
+    // const storedUser = sessionStorage.getItem('user')
 
     if (!storedAccessToken || !storedRefreshToken || !storedUser) {
       return false
@@ -53,17 +53,12 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       accessToken.value = storedAccessToken
-
       refreshToken.value = storedRefreshToken
-
       user.value = JSON.parse(storedUser)
-
       scheduleRefresh()
-
       return true
     } catch {
       clearAuth()
-
       return false
     }
   }
@@ -88,11 +83,13 @@ export const useAuthStore = defineStore('auth', () => {
       phoneNumber: data.phoneNumber
     }
 
-    sessionStorage.setItem('access_token', data.accessToken)
+    // sessionStorage.setItem('access_token', data.accessToken)
+    // sessionStorage.setItem('refresh_token', data.refreshToken)
+    // sessionStorage.setItem('user', JSON.stringify(user.value))
 
-    sessionStorage.setItem('refresh_token', data.refreshToken)
-
-    sessionStorage.setItem('user', JSON.stringify(user.value))
+    localStorage.setItem('access_token', data.accessToken)
+    localStorage.setItem('refresh_token', data.refreshToken)
+    localStorage.setItem('user', JSON.stringify(user.value))
 
     scheduleRefresh()
   }
@@ -110,11 +107,12 @@ export const useAuthStore = defineStore('auth', () => {
 
     user.value = null
 
-    sessionStorage.removeItem('access_token')
-
-    sessionStorage.removeItem('refresh_token')
-
-    sessionStorage.removeItem('user')
+    // sessionStorage.removeItem('access_token')
+    // sessionStorage.removeItem('refresh_token')
+    // sessionStorage.removeItem('user')
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
 
     if (refreshTimeout.value) {
       clearTimeout(refreshTimeout.value)
@@ -222,10 +220,11 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       setAuth(response.data)
-    } catch {
+    } catch(error) {
       clearAuth()
-
-      await navigateTo('/login')
+      console.log('error at refreshing token:\n' + error)
+      throw error
+      await navigateTo('/account/login')
     } finally {
       isRefreshing.value = false
     }
