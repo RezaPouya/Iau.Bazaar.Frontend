@@ -14,12 +14,7 @@ const closeModal = () => {
 </script>
 
 <template>
-  <UModal
-    :open="open"
-    title="پیش‌نمایش توضیحات"
-    class="max-w-3xl"
-    @update:open="closeModal"
-  >
+  <UModal :open="open" title="پیش‌نمایش توضیحات" class="max-w-3xl" @update:open="closeModal">
     <template #body>
       <div class="prose prose-sm dark:prose-invert max-w-none" v-html="htmlContent" />
     </template>

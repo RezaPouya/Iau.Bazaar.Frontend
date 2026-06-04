@@ -34,23 +34,30 @@ const form = reactive({
 })
 
 // Watch for initialData changes (when editing)
-watch(() => props.initialData, (data) => {
-  if (data) {
-    form.id = data.id || null
-    form.title = data.title
-    form.description = data.description
-    form.provinceId = data.provinceId
-    form.isActive = data.isActive
-    form.isVisible = data.isVisible
-  }
-}, { immediate: true })
+watch(
+  () => props.initialData,
+  (data) => {
+    if (data) {
+      form.id = data.id || null
+      form.title = data.title
+      form.description = data.description
+      form.provinceId = data.provinceId
+      form.isActive = data.isActive
+      form.isVisible = data.isVisible
+    }
+  },
+  { immediate: true }
+)
 
 // Reset form when modal closes
-watch(() => props.open, (isOpen) => {
-  if (!isOpen) {
-    resetForm()
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (!isOpen) {
+      resetForm()
+    }
   }
-})
+)
 
 const resetForm = () => {
   form.id = null
@@ -85,12 +92,7 @@ const closeModal = () => {
 </script>
 
 <template>
-  <UModal
-    :open="open"
-    :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'"
-    class="max-w-3xl"
-    @update:open="closeModal"
-  >
+  <UModal :open="open" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-3xl" @update:open="closeModal">
     <template #body>
       <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-3">
         <UFormField label="نام دانشگاه" name="title" required>

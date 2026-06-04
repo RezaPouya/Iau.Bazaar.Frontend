@@ -88,10 +88,13 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-        sort: sortKey.value && sortDirection.value ? {
-          propertyName: sortKey.value,
-          ascending: sortDirection.value === 'asc'
-        } : null
+        sort:
+          sortKey.value && sortDirection.value
+            ? {
+                propertyName: sortKey.value,
+                ascending: sortDirection.value === 'asc'
+              }
+            : null
       }
     }
     const response = await $api.post('panel/admin/universities/list', request)
@@ -228,7 +231,7 @@ const confirmDelete = (id: number) => {
 }
 
 const goToEditPage = (id: number) => {
-  navigateTo(`panel/admin/universities/edit/${id}`)
+  navigateTo(`/panel/admin/universities/edit/${id}`)
 }
 
 onMounted(() => {
@@ -361,9 +364,7 @@ onMounted(() => {
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
-                  هیچ داده‌ای یافت نشد
-                </td>
+                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ داده‌ای یافت نشد</td>
               </tr>
             </tbody>
           </table>
@@ -371,18 +372,9 @@ onMounted(() => {
 
         <!-- صفحه‌بندی -->
         <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
-          <div class="text-gray-500">
-            {{ startIndex }} - {{ endIndex }} از {{ totals }}
-          </div>
+          <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
           <div class="flex gap-1 items-center">
-            <UButton
-              icon="i-lucide-chevron-right"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage <= 1"
-              @click="setPage(currentPage - 1)"
-            />
+            <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
             <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
             <UButton
               icon="i-lucide-chevron-left"
@@ -392,13 +384,7 @@ onMounted(() => {
               :disabled="currentPage >= totalPages"
               @click="setPage(currentPage + 1)"
             />
-            <USelect
-              v-model="pageSize"
-              :items="[10, 20, 50, 100]"
-              size="sm"
-              class="w-20"
-              @update:model-value="setPageSize"
-            />
+            <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
           </div>
         </div>
       </div>
@@ -412,10 +398,7 @@ onMounted(() => {
         @save="handleSave"
       />
 
-      <UniversityPreviewModal
-        v-model:open="previewModalOpen"
-        :html-content="previewHtml"
-      />
+      <UniversityPreviewModal v-model:open="previewModalOpen" :html-content="previewHtml" />
     </div>
   </ClientOnly>
 </template>
@@ -439,10 +422,11 @@ onMounted(() => {
   text-align: right;
 }
 table {
-  min-height: 200px !important;
+  min-height: 100px !important;
 }
 
-tr, tbody{
+tr,
+tbody {
   vertical-align: top !important;
 }
 </style>
