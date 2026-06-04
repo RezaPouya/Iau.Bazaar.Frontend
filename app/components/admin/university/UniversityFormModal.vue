@@ -109,7 +109,7 @@ const closeModal = () => {
         </UFormField>
 
         <UFormField label="توضیحات (HTML)" name="description">
-          <RichTextEditor v-model="form.description" />
+          <FeatureRichTextEditor v-model="form.description" />
         </UFormField>
 
         <div class="flex gap-4">
