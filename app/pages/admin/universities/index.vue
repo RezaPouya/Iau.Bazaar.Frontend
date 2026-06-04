@@ -163,7 +163,7 @@ const clearFilters = () => {
 const modalOpen = ref(false)
 const editingId = ref<number | null>(null)
 const form = reactive({
-  id: null as number | null, // add this line
+  id: null as number | null,
   title: '',
   description: '',
   provinceId: 0,
@@ -205,7 +205,8 @@ const submitForm = async () => {
       await $api.put(`panel/admin/universities/${editingId.value}`, form)
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
-      await $api.post('panel/admin/universities', form)
+      const { id, ...createData } = form
+      await $api.post('panel/admin/universities', createData)
       toast.add({ title: 'ایجاد موفق', color: 'success' })
     }
     modalOpen.value = false
@@ -250,7 +251,7 @@ const confirmDelete = (id: number) => {
 }
 
 const goToEditPage = (id: number) => {
-  navigateTo(`/admin/universities/edit/${id}`)
+  navigateTo(`panel/admin/universities/edit/${id}`)
 }
 
 onMounted(() => {
@@ -260,18 +261,18 @@ onMounted(() => {
 
 <template>
   <ClientOnly>
-    <div>
-      <div class="mb-4 flex justify-between items-center">
-        <h1 class="text-2xl font-bold">مدیریت دانشگاه‌ها</h1>
-        <UButton color="primary" @click="openCreateModal"> افزودن دانشگاه </UButton>
+    <div class="compact-grid">
+      <div class="mb-3 flex justify-between items-center">
+        <h1 class="text-xl font-bold">مدیریت دانشگاه‌ها</h1>
+        <UButton color="primary" size="sm" @click="openCreateModal"> افزودن دانشگاه </UButton>
       </div>
 
-      <UCard class="mb-4">
-        <div class="flex flex-wrap gap-3 items-end">
-          <UFormField label="نام دانشگاه" class="flex-1 min-w-[200px]">
-            <UInput v-model="filterTitle" placeholder="جستجو..." class="w-full" />
+      <UCard class="mb-3 p-3">
+        <div class="flex flex-wrap gap-2 items-end">
+          <UFormField label="نام دانشگاه" class="flex-1 min-w-[150px]">
+            <UInput v-model="filterTitle" placeholder="جستجو..." class="w-full text-right" />
           </UFormField>
-          <UFormField label="استان" class="w-48">
+          <UFormField label="استان" class="w-40">
             <USelect
               v-model="filterProvinceId"
               :items="[{ label: 'همه استان‌ها', value: null }, ...provinces.map((p) => ({ label: p.name, value: p.id }))]"
@@ -279,7 +280,7 @@ onMounted(() => {
               :popper="{ placement: 'bottom-end' }"
             />
           </UFormField>
-          <UFormField label="فعال" class="w-36">
+          <UFormField label="فعال" class="w-28">
             <USelect
               v-model="filterIsActive"
               :items="[
@@ -291,7 +292,7 @@ onMounted(() => {
               :popper="{ placement: 'bottom-end' }"
             />
           </UFormField>
-          <UFormField label="قابل نمایش" class="w-36">
+          <UFormField label="قابل نمایش" class="w-28">
             <USelect
               v-model="filterIsVisible"
               :items="[
@@ -303,72 +304,87 @@ onMounted(() => {
               :popper="{ placement: 'bottom-end' }"
             />
           </UFormField>
-          <div class="flex gap-2">
-            <UButton @click="applyFilters">اعمال فیلترها</UButton>
-            <UButton color="neutral" variant="ghost" @click="clearFilters">حذف فیلترها</UButton>
+          <div class="flex gap-1">
+            <UButton size="sm" @click="applyFilters">اعمال</UButton>
+            <UButton size="sm" color="neutral" variant="ghost" @click="clearFilters">پاک کردن</UButton>
           </div>
         </div>
       </UCard>
 
       <!-- لودینگ -->
-      <UCard v-if="loading" class="flex justify-center py-8">
-        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin mx-auto" />
+      <UCard v-if="loading" class="flex justify-center py-4">
+        <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin mx-auto" />
       </UCard>
 
       <div v-else>
-        <!-- جدول -->
         <div class="overflow-x-auto">
-          <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
                 <th
                   v-for="col in columns"
                   :key="col.key"
-                  class="px-4 py-2 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  class="px-3 py-1.5 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                   @click="col.sortable && setSort(col.key)"
                 >
                   <div class="flex items-center justify-center gap-1">
                     {{ col.label }}
-                    <UIcon v-if="col.sortable" :name="getSortIcon(col.key)" class="size-4" />
+                    <UIcon v-if="col.sortable" :name="getSortIcon(col.key)" class="size-3.5" />
                   </div>
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-4 py-2 text-center">{{ item.id }}</td>
-                <td class="px-4 py-2 text-center">{{ item.title }}</td>
-                <td class="px-4 py-2 text-center">{{ item.provinceName }}</td>
-                <td class="px-4 py-2 text-center">
-                  <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle">
+                <td class="px-3 py-1.5 text-center">{{ item.id }}</td>
+                <td class="px-3 py-1.5 text-center">{{ item.title }}</td>
+                <td class="px-3 py-1.5 text-center">{{ item.provinceName }}</td>
+                <td class="px-3 py-1.5 text-center">
+                  <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle" size="sm">
                     {{ item.isActive ? 'فعال' : 'غیرفعال' }}
                   </UBadge>
                 </td>
-                <td class="px-4 py-2 text-center">
-                  <UBadge :color="item.isVisible ? 'success' : 'neutral'" variant="subtle">
+                <td class="px-3 py-1.5 text-center">
+                  <UBadge :color="item.isVisible ? 'success' : 'neutral'" variant="subtle" size="sm">
                     {{ item.isVisible ? 'نمایش' : 'مخفی' }}
                   </UBadge>
                 </td>
-                <td class="px-4 py-2 text-center">{{ item.createdAtPersian }}</td>
-                <td class="px-4 py-2 text-center">
-                  <div class="flex flex-col gap-2 w-32 mx-auto">
-                    <UButton size="sm" color="neutral" variant="outline" @click="openEditModal(item)">
-                      <UIcon name="i-lucide-edit" class="ml-1" /> ویرایش
-                    </UButton>
-                    <UButton size="sm" color="neutral" variant="outline" @click="showPreview(item.description)">
-                      <UIcon name="i-lucide-eye" class="ml-1" /> پیش‌نمایش
-                    </UButton>
-                    <UButton size="sm" color="error" variant="outline" @click="confirmDelete(item.id)">
-                      <UIcon name="i-lucide-trash" class="ml-1" /> حذف
-                    </UButton>
-                    <UButton size="sm" color="primary" variant="outline" @click="goToEditPage(item.id)">
-                      <UIcon name="i-lucide-file-text" class="ml-1" /> ویرایش صفحه
-                    </UButton>
-                  </div>
+                <td class="px-3 py-1.5 text-center">{{ item.createdAtPersian }}</td>
+                <td class="px-3 py-1.5 text-center">
+                  <UDropdownMenu
+                    :items="[
+                      [
+                        {
+                          label: 'ویرایش',
+                          icon: 'i-lucide-edit',
+                          onSelect: () => openEditModal(item)
+                        },
+                        {
+                          label: 'پیش‌نمایش',
+                          icon: 'i-lucide-eye',
+                          onSelect: () => showPreview(item.description)
+                        },
+                        {
+                          label: 'حذف',
+                          icon: 'i-lucide-trash',
+                          color: 'error',
+                          onSelect: () => confirmDelete(item.id)
+                        },
+                        {
+                          label: 'ویرایش صفحه',
+                          icon: 'i-lucide-file-text',
+                          onSelect: () => goToEditPage(item.id)
+                        }
+                      ]
+                    ]"
+                    :content="{ align: 'end' }"
+                  >
+                    <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-more-vertical" />
+                  </UDropdownMenu>
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-4 py-8 text-center text-gray-500">
+                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
                   هیچ داده‌ای یافت نشد
                 </td>
               </tr>
@@ -377,23 +393,25 @@ onMounted(() => {
         </div>
 
         <!-- صفحه‌بندی -->
-        <div v-if="totalPages > 0" class="flex justify-between items-center mt-4">
-          <div class="text-sm text-gray-500">
+        <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
+          <div class="text-gray-500">
             {{ startIndex }} - {{ endIndex }} از {{ totals }}
           </div>
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-1 items-center">
             <UButton
               icon="i-lucide-chevron-right"
               color="neutral"
               variant="ghost"
+              size="sm"
               :disabled="currentPage <= 1"
               @click="setPage(currentPage - 1)"
             />
-            <span class="text-sm">صفحه {{ currentPage }} از {{ totalPages }}</span>
+            <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
             <UButton
               icon="i-lucide-chevron-left"
               color="neutral"
               variant="ghost"
+              size="sm"
               :disabled="currentPage >= totalPages"
               @click="setPage(currentPage + 1)"
             />
@@ -401,19 +419,19 @@ onMounted(() => {
               v-model="pageSize"
               :items="[10, 20, 50, 100]"
               size="sm"
-              class="w-24"
+              class="w-20"
               @update:model-value="setPageSize"
             />
           </div>
         </div>
       </div>
 
-      <!-- مودال‌ها -->
-      <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-4xl">
+      <!-- مودال افزودن/ویرایش (RTL inputs) -->
+      <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-3xl">
         <template #body>
-          <UForm :state="form" @submit="submitForm" class="space-y-4">
+          <UForm :state="form" @submit="submitForm" class="space-y-3">
             <UFormField label="نام دانشگاه" required>
-              <UInput v-model="form.title" class="w-full" />
+              <UInput v-model="form.title" class="w-full text-right" />
             </UFormField>
             <UFormField label="استان" required>
               <USelect
@@ -434,7 +452,7 @@ onMounted(() => {
                 <USwitch v-model="form.isVisible" />
               </UFormField>
             </div>
-            <div class="flex justify-end gap-2 pt-4">
+            <div class="flex justify-end gap-2 pt-2">
               <UButton color="neutral" variant="ghost" @click="modalOpen = false">انصراف</UButton>
               <UButton type="submit" color="primary">ذخیره</UButton>
             </div>
@@ -442,7 +460,7 @@ onMounted(() => {
         </template>
       </UModal>
 
-      <UModal v-model:open="previewOpen" title="پیش‌نمایش توضیحات" class="max-w-4xl">
+      <UModal v-model:open="previewOpen" title="پیش‌نمایش توضیحات" class="max-w-3xl">
         <template #body>
           <div class="prose prose-sm dark:prose-invert max-w-none" v-html="previewHtml" />
         </template>
@@ -450,3 +468,23 @@ onMounted(() => {
     </div>
   </ClientOnly>
 </template>
+
+<style scoped>
+/* فشرده‌سازی بیشتر */
+.compact-grid :deep(.p-4) {
+  padding: 0.75rem !important;
+}
+.compact-grid :deep(.gap-3) {
+  gap: 0.5rem !important;
+}
+/* راست‌چین کردن ورودی‌ها */
+:deep(input),
+:deep(textarea),
+:deep(.reka-select-trigger) {
+  text-align: right !important;
+}
+/* تنظیمات اضافی برای رفع LTR */
+:deep(.reka-select-value) {
+  text-align: right;
+}
+</style>
