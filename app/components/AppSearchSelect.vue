@@ -74,21 +74,9 @@ const clearSelection = () => {
 
 <template>
   <div class="relative">
-    <UInput
-      :model-value="search"
-      :placeholder="placeholder || 'جستجو...'"
-      class="w-full text-right"
-      @update:model-value="search = $event"
-      @focus="open = true"
-    >
+    <UInput :model-value="search" :placeholder="placeholder || 'جستجو...'" class="w-full text-right" @update:model-value="search = $event" @focus="open = true">
       <template v-if="clearable && modelValue" #trailing>
-        <UButton
-          color="neutral"
-          variant="link"
-          icon="i-lucide-x"
-          size="xs"
-          @click="clearSelection"
-        />
+        <UButton color="neutral" variant="link" icon="i-lucide-x" size="xs" @click="clearSelection" />
       </template>
     </UInput>
 

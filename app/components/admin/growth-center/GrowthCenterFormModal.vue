@@ -1,3 +1,4 @@
+<!-- app/components/admin/growth-center/GrowthCenterFormModal.vue -->
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
@@ -10,11 +11,10 @@ const props = defineProps<{
     id?: number
     title: string
     description: string
-    provinceId: number
+    universityId: number
     isActive: boolean
-    isVisible: boolean
   }
-  provinces: { id: number; name: string }[]
+  universities: { id: number; title: string }[]
 }>()
 
 // Emits
@@ -28,9 +28,8 @@ const form = reactive({
   id: null as number | null,
   title: '',
   description: '',
-  provinceId: 0,
-  isActive: true,
-  isVisible: true
+  universityId: 0,
+  isActive: true
 })
 
 // Watch for initialData changes (when editing)
@@ -40,10 +39,9 @@ watch(
     if (data) {
       form.id = data.id || null
       form.title = data.title
-      form.description = data.description
-      form.provinceId = data.provinceId
+      form.description = data.description || ''
+      form.universityId = data.universityId
       form.isActive = data.isActive
-      form.isVisible = data.isVisible
     }
   },
   { immediate: true }
@@ -63,18 +61,16 @@ const resetForm = () => {
   form.id = null
   form.title = ''
   form.description = ''
-  form.provinceId = props.provinces[0]?.id || 0
+  form.universityId = props.universities[0]?.id || 0
   form.isActive = true
-  form.isVisible = true
 }
 
 // Validation schema
 const schema = z.object({
-  title: z.string().min(2, 'نام دانشگاه باید حداقل ۲ کاراکتر باشد'),
-  provinceId: z.number().min(1, 'لطفاً استان را انتخاب کنید'),
+  title: z.string().min(2, 'نام مرکز رشد باید حداقل ۲ کاراکتر باشد'),
+  universityId: z.number().min(1, 'لطفاً دانشگاه را انتخاب کنید'),
   description: z.string().optional(),
-  isActive: z.boolean(),
-  isVisible: z.boolean()
+  isActive: z.boolean()
 })
 
 type FormData = z.infer<typeof schema>
@@ -92,34 +88,29 @@ const closeModal = () => {
 </script>
 
 <template>
-  <UModal :open="open" :title="editingId ? 'ویرایش دانشگاه' : 'افزودن دانشگاه'" class="max-w-3xl" @update:open="closeModal">
+  <UModal :open="open" :title="editingId ? 'ویرایش مرکز رشد' : 'افزودن مرکز رشد'" class="max-w-3xl" @update:open="closeModal">
     <template #body>
       <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-3">
-        <UFormField label="نام دانشگاه" name="title" required>
+        <UFormField label="نام مرکز رشد" name="title" required>
           <UInput v-model="form.title" class="w-full text-right" />
         </UFormField>
 
-        <UFormField label="استان" name="provinceId" required>
+        <UFormField label="دانشگاه" name="universityId" required>
           <USelect
-            v-model="form.provinceId"
-            :items="provinces.map((p) => ({ label: p.name, value: p.id }))"
+            v-model="form.universityId"
+            :items="universities.map((u) => ({ label: u.title, value: u.id }))"
             class="w-full"
             :popper="{ placement: 'bottom-end' }"
           />
         </UFormField>
 
-        <UFormField label="توضیحات (HTML)" name="description">
+        <UFormField label="توضیحات" name="description">
           <RichTextEditor v-model="form.description" />
         </UFormField>
 
-        <div class="flex gap-4">
-          <UFormField label="فعال" name="isActive" class="flex-1">
-            <USwitch v-model="form.isActive" />
-          </UFormField>
-          <UFormField label="قابل نمایش" name="isVisible" class="flex-1">
-            <USwitch v-model="form.isVisible" />
-          </UFormField>
-        </div>
+        <UFormField label="فعال" name="isActive" class="flex-1">
+          <USwitch v-model="form.isActive" />
+        </UFormField>
 
         <div class="flex justify-end gap-2 pt-2">
           <UButton color="neutral" variant="ghost" @click="closeModal">انصراف</UButton>

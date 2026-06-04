@@ -194,68 +194,179 @@ const clearFormatting = () => {
     <!-- Toolbar -->
     <div v-if="editor" class="border-b p-2 flex gap-1 flex-wrap bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
       <!-- Text formatting -->
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleBold().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bold') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleBold().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bold') }"
+      >
         <UIcon name="i-lucide-bold" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleItalic().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('italic') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleItalic().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('italic') }"
+      >
         <UIcon name="i-lucide-italic" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleUnderline().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('underline') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleUnderline().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('underline') }"
+      >
         <UIcon name="i-lucide-underline" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleStrike().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('strike') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleStrike().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('strike') }"
+      >
         <UIcon name="i-lucide-strikethrough" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleSubscript().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('subscript') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleSubscript().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('subscript') }"
+      >
         <UIcon name="i-lucide-subscript" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleSuperscript().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('superscript') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleSuperscript().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('superscript') }"
+      >
         <UIcon name="i-lucide-superscript" />
       </UButton>
 
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <!-- Headings -->
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 1 }) }">H1</UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 2 }) }">H2</UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleHeading({ level: 3 }).run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 3 }) }">H3</UButton>
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 1 }) }"
+        >H1</UButton
+      >
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 2 }) }"
+        >H2</UButton
+      >
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('heading', { level: 3 }) }"
+        >H3</UButton
+      >
 
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <!-- Lists -->
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleBulletList().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bulletList') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleBulletList().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('bulletList') }"
+      >
         <UIcon name="i-lucide-list" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleOrderedList().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('orderedList') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleOrderedList().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('orderedList') }"
+      >
         <UIcon name="i-lucide-list-ordered" />
       </UButton>
 
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <!-- Text alignment -->
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().setTextAlign('left').run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'left' }) }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().setTextAlign('left').run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'left' }) }"
+      >
         <UIcon name="i-lucide-align-left" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().setTextAlign('center').run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'center' }) }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().setTextAlign('center').run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'center' }) }"
+      >
         <UIcon name="i-lucide-align-center" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().setTextAlign('right').run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'right' }) }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().setTextAlign('right').run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'right' }) }"
+      >
         <UIcon name="i-lucide-align-right" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().setTextAlign('justify').run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'justify' }) }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().setTextAlign('justify').run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive({ textAlign: 'justify' }) }"
+      >
         <UIcon name="i-lucide-align-justify" />
       </UButton>
 
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <!-- Blocks: Blockquote, Code block, Highlight -->
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleBlockquote().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('blockquote') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleBlockquote().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('blockquote') }"
+      >
         <UIcon name="i-lucide-quote" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleCodeBlock().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('codeBlock') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleCodeBlock().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('codeBlock') }"
+      >
         <UIcon name="i-lucide-code" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().toggleHighlight().run()" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('highlight') }">
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        @click="editor.chain().focus().toggleHighlight().run()"
+        :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('highlight') }"
+      >
         <UIcon name="i-lucide-highlighter" />
       </UButton>
 
@@ -275,33 +386,37 @@ const clearFormatting = () => {
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <!-- Table dropdown -->
-      <UDropdownMenu :items="[
-        [
-          { label: 'درج جدول (3x3)', onSelect: insertTable, icon: 'i-lucide-table' },
-          { label: 'افزودن ستون بعد', onSelect: addColumnAfter, icon: 'i-lucide-table-columns' },
-          { label: 'افزودن سطر بعد', onSelect: addRowAfter, icon: 'i-lucide-table-rows' },
-          { label: 'حذف ستون', onSelect: deleteColumn, icon: 'i-lucide-trash' },
-          { label: 'حذف سطر', onSelect: deleteRow, icon: 'i-lucide-trash' },
-          { label: 'حذف جدول', onSelect: deleteTable, icon: 'i-lucide-trash-2' },
-          { label: 'ردیف سرصفحه', onSelect: toggleHeaderRow, icon: 'i-lucide-rows' }
-        ]
-      ]">
+      <UDropdownMenu
+        :items="[
+          [
+            { label: 'درج جدول (3x3)', onSelect: insertTable, icon: 'i-lucide-table' },
+            { label: 'افزودن ستون بعد', onSelect: addColumnAfter, icon: 'i-lucide-table-columns' },
+            { label: 'افزودن سطر بعد', onSelect: addRowAfter, icon: 'i-lucide-table-rows' },
+            { label: 'حذف ستون', onSelect: deleteColumn, icon: 'i-lucide-trash' },
+            { label: 'حذف سطر', onSelect: deleteRow, icon: 'i-lucide-trash' },
+            { label: 'حذف جدول', onSelect: deleteTable, icon: 'i-lucide-trash-2' },
+            { label: 'ردیف سرصفحه', onSelect: toggleHeaderRow, icon: 'i-lucide-rows' }
+          ]
+        ]"
+      >
         <UButton size="xs" color="neutral" variant="ghost">
           <UIcon name="i-lucide-grid-3x3" />
         </UButton>
       </UDropdownMenu>
 
       <!-- Color picker (simple) -->
-      <UDropdownMenu :items="[
-        [
-          { label: 'قرمز', onSelect: () => setTextColor('#ef4444') },
-          { label: 'سبز', onSelect: () => setTextColor('#22c55e') },
-          { label: 'آبی', onSelect: () => setTextColor('#3b82f6') },
-          { label: 'نارنجی', onSelect: () => setTextColor('#f97316') },
-          { label: 'بنفش', onSelect: () => setTextColor('#a855f7') },
-          { label: 'حذف رنگ', onSelect: unsetColor }
-        ]
-      ]">
+      <UDropdownMenu
+        :items="[
+          [
+            { label: 'قرمز', onSelect: () => setTextColor('#ef4444') },
+            { label: 'سبز', onSelect: () => setTextColor('#22c55e') },
+            { label: 'آبی', onSelect: () => setTextColor('#3b82f6') },
+            { label: 'نارنجی', onSelect: () => setTextColor('#f97316') },
+            { label: 'بنفش', onSelect: () => setTextColor('#a855f7') },
+            { label: 'حذف رنگ', onSelect: unsetColor }
+          ]
+        ]"
+      >
         <UButton size="xs" color="neutral" variant="ghost">
           <UIcon name="i-lucide-palette" />
         </UButton>

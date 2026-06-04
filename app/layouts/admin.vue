@@ -23,6 +23,11 @@ const navigation = [
     label: 'مدیریت دانشگاه‌ها',
     icon: 'i-lucide-building-2',
     to: '/admin/universities'
+  },
+  {
+    label: 'مدیریت مراکز رشد',
+    icon: 'i-lucide-trending-up',
+    to: '/admin/growth-centers'
   }
 ]
 

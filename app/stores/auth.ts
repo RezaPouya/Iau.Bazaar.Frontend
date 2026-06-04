@@ -220,7 +220,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       setAuth(response.data)
-    } catch(error) {
+    } catch (error) {
       clearAuth()
       console.log('error at refreshing token:\n' + error)
       throw error
