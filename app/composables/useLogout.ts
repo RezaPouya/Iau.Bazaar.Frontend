@@ -23,7 +23,7 @@ export const useLogout = () => {
     } finally {
       // Always clear local auth state regardless of API response
       auth.clearAuth()
-      await navigateTo('/login')
+      await navigateTo('/')
     }
   }
 
