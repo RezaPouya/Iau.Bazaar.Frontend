@@ -7,5 +7,5 @@ export default defineNuxtRouteMiddleware(() => {
     return
   }
 
-  return navigateTo(auth.user?.panelUrl || '/admin')
+  return navigateTo(auth.user?.panelUrl || '/')
 })
