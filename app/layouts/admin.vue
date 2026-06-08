@@ -20,6 +20,11 @@ const navigation = [
     exact: true
   },
   {
+    label: 'مدیریت کاربران', // آیتم جدید
+    icon: 'i-lucide-users',
+    to: '/admin/users'
+  },
+  {
     label: 'مدیریت دانشگاه‌ها',
     icon: 'i-lucide-building-2',
     to: '/admin/universities'
