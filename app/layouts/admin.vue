@@ -28,6 +28,11 @@ const navigation = [
     label: 'مدیریت مراکز رشد',
     icon: 'i-lucide-trending-up',
     to: '/admin/growth-centers'
+  },
+  {
+    label: 'مدیریت شرکت‌ها', // Add this
+    icon: 'i-lucide-building',
+    to: '/admin/companies'
   }
 ]
 
