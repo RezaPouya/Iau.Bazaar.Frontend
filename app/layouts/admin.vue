@@ -25,6 +25,11 @@ const navigation = [
     to: '/admin/users'
   },
   {
+    label: 'مدیریت پیام‌ها', // آیتم جدید
+    icon: 'i-lucide-messages-square',
+    to: '/admin/messages'
+  },
+  {
     label: 'مدیریت دانشگاه‌ها',
     icon: 'i-lucide-building-2',
     to: '/admin/universities'
