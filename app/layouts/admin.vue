@@ -30,6 +30,16 @@ const navigation = [
     to: '/admin/messages'
   },
   {
+    label: 'مدیریت دسته‌بندی‌ها',
+    icon: 'i-lucide-tags',
+    to: '/admin/product-categories'
+  },
+  {
+    label: 'مدیریت رسانه',
+    icon: 'i-lucide-folder-image',
+    to: '/admin/media'
+  },
+  {
     label: 'مدیریت دانشگاه‌ها',
     icon: 'i-lucide-building-2',
     to: '/admin/universities'
@@ -40,19 +50,14 @@ const navigation = [
     to: '/admin/growth-centers'
   },
   {
-    label: 'مدیریت شرکت‌ها', // Add this
+    label: 'مدیریت شرکت‌ها',
     icon: 'i-lucide-building',
     to: '/admin/companies'
   },
   {
-    label: 'مدیریت دسته‌بندی‌ها',
-    icon: 'i-lucide-tags',
-    to: '/admin/product-categories'
-  },
-  {
-    label: 'مدیریت رسانه',
-    icon: 'i-lucide-folder-image',
-    to: '/admin/media'
+    label: 'مدیریت محصولات',
+    icon: 'i-lucide-box',
+    to: '/admin/products'
   }
 ]
 
