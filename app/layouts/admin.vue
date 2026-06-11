@@ -43,6 +43,16 @@ const navigation = [
     label: 'مدیریت شرکت‌ها', // Add this
     icon: 'i-lucide-building',
     to: '/admin/companies'
+  },
+  {
+    label: 'مدیریت دسته‌بندی‌ها',
+    icon: 'i-lucide-tags',
+    to: '/admin/product-categories'
+  },
+  {
+    label: 'مدیریت رسانه',
+    icon: 'i-lucide-folder-image',
+    to: '/admin/media'
   }
 ]
 

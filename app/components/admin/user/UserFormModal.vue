@@ -85,10 +85,7 @@ const schema = z.object({
   email: z.string().email('ایمیل نامعتبر است').optional().or(z.literal('')),
   nationalCode: z.string().length(10, 'کد ملی باید ۱۰ رقم باشد').optional().or(z.literal('')),
   role: z.string().min(1, 'لطفاً نقش کاربر را انتخاب کنید'),
-  password: z.string()
-    .min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد')
-    .optional()
-    .or(z.literal('')),
+  password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد').optional().or(z.literal('')),
   isActive: z.boolean()
 })
 
@@ -113,7 +110,7 @@ const closeModal = () => {
 }
 
 const roleOptions = computed(() => {
-  return props.roles.map(role => ({
+  return props.roles.map((role) => ({
     label: role.nameFa || role.name,
     value: role.id
   }))
@@ -121,12 +118,7 @@ const roleOptions = computed(() => {
 </script>
 
 <template>
-  <UModal
-    :open="open"
-    :title="editingId ? 'ویرایش کاربر' : 'افزودن کاربر'"
-    class="max-w-2xl"
-    @update:open="closeModal"
-  >
+  <UModal :open="open" :title="editingId ? 'ویرایش کاربر' : 'افزودن کاربر'" class="max-w-2xl" @update:open="closeModal">
     <template #body>
       <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -151,12 +143,7 @@ const roleOptions = computed(() => {
           </UFormField>
 
           <UFormField label="نقش کاربری" name="role" required>
-            <USelect
-              v-model="form.role"
-              :items="roleOptions"
-              class="w-full"
-              :popper="{ placement: 'bottom-end' }"
-            />
+            <USelect v-model="form.role" :items="roleOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
 
           <UFormField label="رمز عبور" name="password">
@@ -167,18 +154,11 @@ const roleOptions = computed(() => {
                 class="flex-1 text-left"
                 :placeholder="editingId ? 'در صورت تمایل رمز جدید وارد کنید' : 'رمز عبور را وارد کنید'"
               />
-              <UButton
-                size="sm"
-                color="neutral"
-                variant="ghost"
-                @click="showPassword = !showPassword"
-              >
+              <UButton size="sm" color="neutral" variant="ghost" @click="showPassword = !showPassword">
                 <UIcon :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
               </UButton>
             </div>
-            <p v-if="editingId" class="text-xs text-dimmed mt-1">
-              برای تغییر رمز عبور، مقدار جدید وارد کنید
-            </p>
+            <p v-if="editingId" class="text-xs text-dimmed mt-1">برای تغییر رمز عبور، مقدار جدید وارد کنید</p>
           </UFormField>
 
           <UFormField label="فعال" name="isActive" class="flex-1">

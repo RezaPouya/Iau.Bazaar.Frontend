@@ -111,10 +111,12 @@ const formatCommission = (value: number) => `${value}%`
         <UFormField label="مرکز رشد" name="growthCenterId" required>
           <USelect
             v-model="form.growthCenterId"
-            :items="growthCenters.map((gc) => ({
-              label: gc.title + (gc.universityName ? ` (${gc.universityName})` : ''),
-              value: gc.id
-            }))"
+            :items="
+              growthCenters.map((gc) => ({
+                label: gc.title + (gc.universityName ? ` (${gc.universityName})` : ''),
+                value: gc.id
+              }))
+            "
             class="w-full"
             :popper="{ placement: 'bottom-end' }"
           />

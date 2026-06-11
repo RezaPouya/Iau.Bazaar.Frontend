@@ -7,10 +7,7 @@ export const useAdminUserService = () => {
   const { $api } = useNuxtApp()
 
   const getUsersList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<User>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<User>>>(
-      'panel/admin/users/list',
-      request
-    )
+    const response = await $api.post<ApiResponse<GridDataSourceResult<User>>>('panel/admin/users/list', request)
     return response.data.data
   }
 

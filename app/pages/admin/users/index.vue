@@ -103,12 +103,13 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-        sort: sortKey.value && sortDirection.value
-          ? {
-              propertyName: sortKey.value,
-              ascending: sortDirection.value === 'asc'
-            }
-          : null
+        sort:
+          sortKey.value && sortDirection.value
+            ? {
+                propertyName: sortKey.value,
+                ascending: sortDirection.value === 'asc'
+              }
+            : null
       }
     }
 
@@ -302,9 +303,7 @@ onMounted(async () => {
     <div class="compact-grid">
       <div class="mb-3 flex justify-between items-center">
         <h1 class="text-xl font-bold">مدیریت کاربران</h1>
-        <UButton color="primary" size="sm" @click="openCreateModal">
-          افزودن کاربر
-        </UButton>
+        <UButton color="primary" size="sm" @click="openCreateModal"> افزودن کاربر </UButton>
       </div>
 
       <!-- Filters -->
@@ -322,10 +321,7 @@ onMounted(async () => {
           <UFormField label="نقش کاربری" class="w-32">
             <USelect
               v-model="filterRole"
-              :items="[
-                { label: 'همه نقش‌ها', value: null },
-                ...roles.map(r => ({ label: r.nameFa || r.name, value: r.id }))
-              ]"
+              :items="[{ label: 'همه نقش‌ها', value: null }, ...roles.map((r) => ({ label: r.nameFa || r.name, value: r.id }))]"
               class="w-full"
               :popper="{ placement: 'bottom-end' }"
             />
@@ -374,11 +370,7 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="item in data"
-                :key="item.userId"
-                class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
+              <tr v-for="item in data" :key="item.userId" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td class="px-3 py-1.5 text-center">{{ item.userId }}</td>
                 <td class="px-3 py-1.5 text-right">{{ item.fullName }}</td>
                 <td class="px-3 py-1.5 text-center">{{ item.userName }}</td>
@@ -429,9 +421,7 @@ onMounted(async () => {
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
-                  هیچ کاربری یافت نشد
-                </td>
+                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ کاربری یافت نشد</td>
               </tr>
             </tbody>
           </table>
@@ -441,14 +431,7 @@ onMounted(async () => {
         <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
           <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
           <div class="flex gap-1 items-center">
-            <UButton
-              icon="i-lucide-chevron-right"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage <= 1"
-              @click="setPage(currentPage - 1)"
-            />
+            <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
             <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
             <UButton
               icon="i-lucide-chevron-left"
@@ -458,13 +441,7 @@ onMounted(async () => {
               :disabled="currentPage >= totalPages"
               @click="setPage(currentPage + 1)"
             />
-            <USelect
-              v-model="pageSize"
-              :items="[10, 20, 50, 100]"
-              size="sm"
-              class="w-20"
-              @update:model-value="setPageSize"
-            />
+            <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
           </div>
         </div>
       </div>
@@ -478,11 +455,7 @@ onMounted(async () => {
         @save="handleSave"
       />
 
-      <UserPasswordModal
-        v-model:open="passwordModalOpen"
-        :user-name="selectedUserForPassword?.fullName || ''"
-        @save="handleResetPassword"
-      />
+      <UserPasswordModal v-model:open="passwordModalOpen" :user-name="selectedUserForPassword?.fullName || ''" @save="handleResetPassword" />
     </div>
   </ClientOnly>
 </template>

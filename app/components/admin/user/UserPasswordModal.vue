@@ -20,13 +20,15 @@ const form = reactive({
 
 const showPassword = ref(false)
 
-const schema = z.object({
-  password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد'),
-  confirmPassword: z.string().min(6, 'تکرار رمز عبور الزامی است')
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'رمز عبور و تکرار آن مطابقت ندارند',
-  path: ['confirmPassword']
-})
+const schema = z
+  .object({
+    password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد'),
+    confirmPassword: z.string().min(6, 'تکرار رمز عبور الزامی است')
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'رمز عبور و تکرار آن مطابقت ندارند',
+    path: ['confirmPassword']
+  })
 
 type FormData = z.infer<typeof schema>
 
@@ -65,28 +67,15 @@ watch(
 
         <UFormField label="رمز عبور جدید" name="password" required>
           <div class="flex gap-2">
-            <UInput
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              class="flex-1 text-left"
-            />
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              @click="showPassword = !showPassword"
-            >
+            <UInput v-model="form.password" :type="showPassword ? 'text' : 'password'" class="flex-1 text-left" />
+            <UButton size="sm" color="neutral" variant="ghost" @click="showPassword = !showPassword">
               <UIcon :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
             </UButton>
           </div>
         </UFormField>
 
         <UFormField label="تکرار رمز عبور" name="confirmPassword" required>
-          <UInput
-            v-model="form.confirmPassword"
-            :type="showPassword ? 'text' : 'password'"
-            class="w-full text-left"
-          />
+          <UInput v-model="form.confirmPassword" :type="showPassword ? 'text' : 'password'" class="w-full text-left" />
         </UFormField>
 
         <div class="flex justify-end gap-2 pt-2">

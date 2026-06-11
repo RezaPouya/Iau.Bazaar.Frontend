@@ -14,18 +14,13 @@ export const useAdminMessageService = () => {
 
   // دریافت مشخصات گرید (فیلدهای قابل مرتب‌سازی و فیلتر)
   const getGridSpecs = async (): Promise<GridDataSourceRequestAllowedParameters> => {
-    const response = await $api.get<ApiResponse<GridDataSourceRequestAllowedParameters>>(
-      'api/admin/messages/grid-specs'
-    )
+    const response = await $api.get<ApiResponse<GridDataSourceRequestAllowedParameters>>('api/admin/messages/grid-specs')
     return response.data.data
   }
 
   // دریافت لیست پیام‌ها
   const getMessagesList = async (filter: ContactUsMessageListFilterDto): Promise<GridDataSourceResult<ContactUsMessageDto>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<ContactUsMessageDto>>>(
-      'api/admin/messages/list',
-      filter
-    )
+    const response = await $api.post<ApiResponse<GridDataSourceResult<ContactUsMessageDto>>>('api/admin/messages/list', filter)
     return response.data.data
   }
 
@@ -54,10 +49,7 @@ export const useAdminMessageService = () => {
 
   // پاسخ به پیام
   const answerMessage = async (id: number, adminNote: string): Promise<ContactUsMessageDto> => {
-    const response = await $api.post<ApiResponse<ContactUsMessageDto>>(
-      `api/admin/messages/${id}/answer`,
-      { adminNote } as AnswerMessageDto
-    )
+    const response = await $api.post<ApiResponse<ContactUsMessageDto>>(`api/admin/messages/${id}/answer`, { adminNote } as AnswerMessageDto)
     return response.data.data
   }
 
