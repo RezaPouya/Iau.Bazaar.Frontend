@@ -1,4 +1,5 @@
-// types/grid.ts
+// app/types/grid.ts
+
 export interface GridSort {
   propertyName: string
   ascending: boolean
@@ -29,6 +30,17 @@ export interface GridDataSourceResult<T> {
   data: T[]
 }
 
+// اضافه شده - مشخصات فیلدهای مجاز برای گرید
+export interface GridAllowedPropertyFilterDto {
+  propertyName: string
+  operation: string
+}
+
+export interface GridDataSourceRequestAllowedParameters {
+  allowedFilterProperties: GridAllowedPropertyFilterDto[]
+  allowedSortProperties: string[]
+}
+
 // Helper to build request object
 export function createGridRequest(page = 1, pageSize = 10, sort?: GridSort, filters: GridPropertyFilter[] = []): GridDataSourceRequest {
   return {
@@ -53,3 +65,5 @@ export const GridFilterOperation = {
   EndsWith: 'endswith',
   BooleanEquals: 'booleanquals'
 } as const
+
+export type GridFilterOperationType = (typeof GridFilterOperation)[keyof typeof GridFilterOperation]

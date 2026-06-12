@@ -79,9 +79,12 @@ const closeModal = () => {
   emit('update:open', false)
 }
 
-watch(() => props.open, (isOpen) => {
-  if (!isOpen) resetForm()
-})
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (!isOpen) resetForm()
+  }
+)
 </script>
 
 <template>
@@ -94,19 +97,9 @@ watch(() => props.open, (isOpen) => {
       <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-4">
         <UFormField label="فایل‌ها" name="files" required>
           <div class="space-y-2">
-            <UInput
-              ref="fileInputRef"
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar"
-              @change="onFileSelect"
-            />
+            <UInput ref="fileInputRef" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar" @change="onFileSelect" />
             <div v-if="form.files.length" class="space-y-1 mt-2">
-              <div
-                v-for="(file, index) in form.files"
-                :key="index"
-                class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded-lg"
-              >
+              <div v-for="(file, index) in form.files" :key="index" class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-file" class="size-4 text-dimmed" />
                   <span class="text-sm">{{ file.name }}</span>

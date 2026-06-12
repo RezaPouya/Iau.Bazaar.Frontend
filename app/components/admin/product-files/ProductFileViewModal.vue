@@ -25,9 +25,12 @@ const formatFileSize = (bytes: number) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'Approved': return { color: 'success', label: 'تایید شده' }
-    case 'Rejected': return { color: 'error', label: 'رد شده' }
-    default: return { color: 'warning', label: 'در انتظار تایید' }
+    case 'Approved':
+      return { color: 'success', label: 'تایید شده' }
+    case 'Rejected':
+      return { color: 'error', label: 'رد شده' }
+    default:
+      return { color: 'warning', label: 'در انتظار تایید' }
   }
 }
 

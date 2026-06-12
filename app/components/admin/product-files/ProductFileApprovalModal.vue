@@ -42,9 +42,7 @@ const onSubmit = () => {
         <p class="text-sm">
           فایل: <span class="font-semibold">{{ file.title || file.fileName }}</span>
         </p>
-        <p class="text-xs text-dimmed">
-          محصول: {{ file.productId }}
-        </p>
+        <p class="text-xs text-dimmed">محصول: {{ file.productId }}</p>
 
         <UFormField label="نتیجه تایید" required>
           <div class="flex gap-4">

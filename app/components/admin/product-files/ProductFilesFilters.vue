@@ -37,12 +37,7 @@ const clearFilters = () => emit('clear')
       </UFormField>
 
       <UFormField label="وضعیت تایید" class="w-32">
-        <USelect
-          v-model="filters.approvalStatus"
-          :items="statusOptions"
-          class="w-full"
-          :popper="{ placement: 'bottom-end' }"
-        />
+        <USelect v-model="filters.approvalStatus" :items="statusOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
       </UFormField>
 
       <div class="flex gap-1">

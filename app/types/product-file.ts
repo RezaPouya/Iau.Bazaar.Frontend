@@ -69,4 +69,3 @@ export interface UploadLegalDocumentInput {
   title: string
   description?: string
 }
-

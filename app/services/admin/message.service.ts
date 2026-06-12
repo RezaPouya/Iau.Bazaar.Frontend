@@ -1,13 +1,7 @@
 // app/services/admin/message.service.ts
 import type { ApiResponse } from '~/types/api'
-import type {
-  ContactUsMessageDto,
-  UpdateContactUsMessageDto,
-  AnswerMessageDto,
-  ContactUsMessageListFilterDto,
-  GridDataSourceRequestAllowedParameters
-} from '~/types/message'
-import type { GridDataSourceResult } from '~/types/grid'
+import type { GridDataSourceRequestAllowedParameters, GridDataSourceResult } from '~/types/grid'
+import type { ContactUsMessageDto, UpdateContactUsMessageDto, AnswerMessageDto, ContactUsMessageListFilterDto } from '~/types/message'
 
 export const useAdminMessageService = () => {
   const { $api } = useNuxtApp()

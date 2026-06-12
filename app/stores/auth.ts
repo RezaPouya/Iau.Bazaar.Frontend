@@ -38,15 +38,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /*
-    |--------------------------------------------------------------------------
-    | Set Auth
-    |--------------------------------------------------------------------------
-    */
-
   const setAuth = (data: LoginResponse) => {
     accessToken.value = data.accessToken
-
     refreshToken.value = data.refreshToken
 
     user.value = {
@@ -59,10 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     if (import.meta.client) {
-      // sessionStorage.setItem('access_token', data.accessToken)
-      // sessionStorage.setItem('refresh_token', data.refreshToken)
-      // sessionStorage.setItem('user', JSON.stringify(user.value))
-
       localStorage.setItem('access_token', data.accessToken)
       localStorage.setItem('refresh_token', data.refreshToken)
       localStorage.setItem('user', JSON.stringify(user.value))
@@ -70,12 +59,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     scheduleRefresh()
   }
-
-  /*
-    |--------------------------------------------------------------------------
-    | Clear Auth
-    |--------------------------------------------------------------------------
-    */
 
   const clearAuth = () => {
     accessToken.value = ''
@@ -94,12 +77,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /*
-    |--------------------------------------------------------------------------
-    | Login
-    |--------------------------------------------------------------------------
-    */
-
   const login = async (userName: string, password: string) => {
     const service = useAccountService()
 
@@ -115,20 +92,12 @@ export const useAuthStore = defineStore('auth', () => {
     setAuth(response.data)
   }
 
-  /*
-    |--------------------------------------------------------------------------
-    | Logout
-    |--------------------------------------------------------------------------
-    */
-
   const logout = async () => {
     const toast = useAppToast()
 
     try {
       const { $api } = useNuxtApp()
-
       await $api.post('/account/logout')
-
       toast.success('خروج موفق', 'با موفقیت از حساب کاربری خارج شدید')
     } catch {
       toast.error('هشدار', 'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد')
@@ -139,14 +108,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /*
-    |--------------------------------------------------------------------------
-    | Schedule Refresh
-    |--------------------------------------------------------------------------
-    */
-
   const scheduleRefresh = () => {
-    if (!accessToken.value) {
+    if (!accessToken || !accessToken.value) {
       return
     }
 
@@ -154,7 +117,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (!expiration) {
       clearAuth()
-
       return
     }
 
@@ -162,7 +124,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (timeout <= 0) {
       refreshAuthToken()
-
       return
     }
 
@@ -175,12 +136,6 @@ export const useAuthStore = defineStore('auth', () => {
     }, timeout)
   }
 
-  /*
-    |--------------------------------------------------------------------------
-    | Refresh Token
-    |--------------------------------------------------------------------------
-    */
-
   const refreshAuthToken = async () => {
     if (isRefreshing.value || !refreshToken.value) {
       return
@@ -188,9 +143,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       isRefreshing.value = true
-
       const service = useAccountService()
-
       const response = await service.refreshToken({
         refreshToken: refreshToken.value
       })
@@ -201,33 +154,24 @@ export const useAuthStore = defineStore('auth', () => {
 
       setAuth(response.data)
     } catch (error) {
+      // ✅ مهم: clear auth و پرتاب خطا
       clearAuth()
-
       console.error('Error refreshing token:', error)
-
-      await navigateTo('/account/login')
-
       throw error
     } finally {
       isRefreshing.value = false
     }
   }
-
   return {
     accessToken,
     refreshToken,
     user,
-
     isAuthenticated,
-
     login,
     logout,
-
     setAuth,
     clearAuth,
-
     restoreSession,
-
     refreshAuthToken,
     scheduleRefresh
   }

@@ -1,92 +1,94 @@
-import axios from 'axios'
+// app/plugins/api.ts
+import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import { useAuthStore } from '~/stores/auth'
+
+// تعریف نوع برای درخواست‌های با retry
+interface RetryableRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: number
+}
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
+  const MAX_RETRY_COUNT = 3
+  const BASE_RETRY_DELAY = 1000
 
   const api = axios.create({
     baseURL: config.public.apiBase,
-    timeout: 30000
+    timeout: 30000,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    }
   })
 
-  /*
-  |--------------------------------------------------------------------------
-  | Request Interceptor
-  |--------------------------------------------------------------------------
-  */
-
+  // ==================== Request Interceptor ====================
   api.interceptors.request.use(
-    (config) => {
-      const pinia = useNuxtApp().$pinia
-      const auth = useAuthStore(pinia)
+    async (requestConfig: RetryableRequestConfig) => {
+      const { $pinia } = useNuxtApp()
+      const auth = useAuthStore($pinia)
 
       if (auth.accessToken) {
-        config.headers.Authorization = `Bearer ${auth.accessToken}`
-        config.headers['X-Requested-With'] = 'XMLHttpRequest'
+        requestConfig.headers.Authorization = `Bearer ${auth.accessToken}`
+        requestConfig.headers['X-Requested-With'] = 'XMLHttpRequest'
       }
 
-      return config
+      return requestConfig
     },
-    (error) => Promise.reject(error)
+    (error: AxiosError) => Promise.reject(error)
   )
 
-  /*
-  |--------------------------------------------------------------------------
-  | Response Interceptor
-  |--------------------------------------------------------------------------
-  */
-
+  // ==================== Response Interceptor ====================
+  // app/plugins/api.ts - قسمت response interceptor
   api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const auth = useAuthStore()
-      const originalRequest = error.config
+    (response: AxiosResponse) => response,
+    async (error: AxiosError) => {
+      const { $pinia } = useNuxtApp()
+      const auth = useAuthStore($pinia)
+      const originalRequest = error.config as RetryableRequestConfig
 
-      // If there's no request config, just reject
-      if (!originalRequest) return Promise.reject(error)
-
-      // Prevent infinite retry loops
-      if (originalRequest._retry) {
-        auth.clearAuth()
-        await navigateTo('/login')
+      if (!originalRequest) {
         return Promise.reject(error)
       }
 
-      // Ignore logout endpoint failures – they are already handled in the store
-      if (originalRequest.url?.includes('/account/logout')) {
-        return Promise.reject(error)
-      }
-
-      // Only handle 401 Unauthorized responses
+      // ==================== 401 Unauthorized ====================
       if (error.response?.status === 401) {
-        // Mark this request as retried to avoid loops
-        originalRequest._retry = true
+        originalRequest._retry = originalRequest._retry || 0
 
-        // Do NOT try to refresh if the failing request itself is the refresh token endpoint
+        if (originalRequest._retry >= MAX_RETRY_COUNT) {
+          auth.clearAuth()
+          await navigateTo('/account/login', { replace: true })
+          return Promise.reject(error)
+        }
+
+        if (originalRequest.url?.includes('/account/logout')) {
+          auth.clearAuth()
+          return Promise.reject(error)
+        }
+
         if (originalRequest.url?.includes('/account/refresh-token')) {
           auth.clearAuth()
-          await navigateTo('/login')
+          await navigateTo('/account/login', { replace: true })
           return Promise.reject(error)
         }
 
         if (auth.refreshToken) {
+          originalRequest._retry++
+
           try {
-            // refreshAuthToken() now throws on failure
             await auth.refreshAuthToken()
-            // Update the failed request with the new access token
             originalRequest.headers.Authorization = `Bearer ${auth.accessToken}`
-            // Retry the original request
             return api(originalRequest)
-          } catch {
-            // Refresh failed – clear everything and redirect
+          } catch (refreshError) {
+            // ✅ مهم: clear auth و هدایت به لاگین
             auth.clearAuth()
-            await navigateTo('/login')
+            await navigateTo('/account/login', { replace: true })
             return Promise.reject(error)
           }
         } else {
-          // No refresh token available – immediate logout
+          // ✅ مهم: clear auth و هدایت به لاگین
           auth.clearAuth()
-          await navigateTo('/login')
+          await navigateTo('/account/login', { replace: true })
+          return Promise.reject(error)
         }
       }
 
@@ -94,9 +96,41 @@ export default defineNuxtPlugin(() => {
     }
   )
 
+  // ==================== Helper Methods ====================
+  const get = async <T>(url: string, params?: any): Promise<T> => {
+    const response = await api.get<T>(url, { params })
+    return response.data
+  }
+
+  const post = async <T>(url: string, data?: any): Promise<T> => {
+    const response = await api.post<T>(url, data)
+    return response.data
+  }
+
+  const put = async <T>(url: string, data?: any): Promise<T> => {
+    const response = await api.put<T>(url, data)
+    return response.data
+  }
+
+  const del = async <T>(url: string): Promise<T> => {
+    const response = await api.delete<T>(url)
+    return response.data
+  }
+
+  const patch = async <T>(url: string, data?: any): Promise<T> => {
+    const response = await api.patch<T>(url, data)
+    return response.data
+  }
+
   return {
     provide: {
-      api
+      api,
+      $api: api,
+      apiGet: get,
+      apiPost: post,
+      apiPut: put,
+      apiDelete: del,
+      apiPatch: patch
     }
   }
 })

@@ -100,12 +100,13 @@ const loadFiles = async () => {
       pageSize: filePageSize.value,
       inputParams: {
         filters,
-        sort: fileSortKey.value && fileSortDirection.value
-          ? {
-              propertyName: fileSortKey.value,
-              ascending: fileSortDirection.value === 'asc'
-            }
-          : null
+        sort:
+          fileSortKey.value && fileSortDirection.value
+            ? {
+                propertyName: fileSortKey.value,
+                ascending: fileSortDirection.value === 'asc'
+              }
+            : null
       }
     }
 
@@ -135,12 +136,13 @@ const loadLegalDocuments = async () => {
       pageSize: legalPageSize.value,
       inputParams: {
         filters,
-        sort: legalSortKey.value && legalSortDirection.value
-          ? {
-              propertyName: legalSortKey.value,
-              ascending: legalSortDirection.value === 'asc'
-            }
-          : null
+        sort:
+          legalSortKey.value && legalSortDirection.value
+            ? {
+                propertyName: legalSortKey.value,
+                ascending: legalSortDirection.value === 'asc'
+              }
+            : null
       }
     }
 
@@ -336,9 +338,7 @@ onMounted(async () => {
         <button
           @click="activeTab = 'files'"
           class="px-4 py-2 text-sm font-medium transition-all border-b-2"
-          :class="activeTab === 'files'
-            ? 'border-primary-600 text-primary-600'
-            : 'border-transparent text-dimmed hover:text-gray-700 dark:hover:text-gray-300'"
+          :class="activeTab === 'files' ? 'border-primary-600 text-primary-600' : 'border-transparent text-dimmed hover:text-gray-700 dark:hover:text-gray-300'"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-files" class="size-4" />
@@ -348,9 +348,7 @@ onMounted(async () => {
         <button
           @click="activeTab = 'legal'"
           class="px-4 py-2 text-sm font-medium transition-all border-b-2"
-          :class="activeTab === 'legal'
-            ? 'border-primary-600 text-primary-600'
-            : 'border-transparent text-dimmed hover:text-gray-700 dark:hover:text-gray-300'"
+          :class="activeTab === 'legal' ? 'border-primary-600 text-primary-600' : 'border-transparent text-dimmed hover:text-gray-700 dark:hover:text-gray-300'"
         >
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-file-text" class="size-4" />
@@ -361,11 +359,7 @@ onMounted(async () => {
 
       <!-- Files Tab -->
       <div v-if="activeTab === 'files'">
-        <ProductFilesFilters
-          v-model:filters="fileFilters"
-          @apply="applyFileFilters"
-          @clear="clearFileFilters"
-        />
+        <ProductFilesFilters v-model:filters="fileFilters" @apply="applyFileFilters" @clear="clearFileFilters" />
 
         <UCard v-if="fileLoading" class="flex justify-center py-4">
           <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin mx-auto" />
@@ -378,10 +372,25 @@ onMounted(async () => {
             :sort-key="fileSortKey"
             :sort-direction="fileSortDirection"
             @sort="setFileSort"
-            @view="(file) => { selectedFile = file; viewModalOpen = true }"
+            @view="
+              (file) => {
+                selectedFile = file
+                viewModalOpen = true
+              }
+            "
             @download="downloadFile"
-            @approve="(file) => { approvingFile = file; approvalModalOpen = true }"
-            @delete="(file) => { deletingFile = file; deleteModalOpen = true }"
+            @approve="
+              (file) => {
+                approvingFile = file
+                approvalModalOpen = true
+              }
+            "
+            @delete="
+              (file) => {
+                deletingFile = file
+                deleteModalOpen = true
+              }
+            "
           />
 
           <!-- Pagination -->
@@ -394,7 +403,10 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="fileCurrentPage <= 1"
-                @click="fileCurrentPage--; loadFiles()"
+                @click="
+                  fileCurrentPage--
+                  loadFiles()
+                "
               />
               <span class="text-sm mx-1">صفحه {{ fileCurrentPage }} از {{ fileTotalPages }}</span>
               <UButton
@@ -403,14 +415,20 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="fileCurrentPage >= fileTotalPages"
-                @click="fileCurrentPage++; loadFiles()"
+                @click="
+                  fileCurrentPage++
+                  loadFiles()
+                "
               />
               <USelect
                 v-model="filePageSize"
                 :items="[10, 20, 50, 100]"
                 size="sm"
                 class="w-20"
-                @update:model-value="fileCurrentPage = 1; loadFiles()"
+                @update:model-value="
+                  fileCurrentPage = 1
+                  loadFiles()
+                "
               />
             </div>
           </div>
@@ -430,10 +448,25 @@ onMounted(async () => {
             :sort-key="legalSortKey"
             :sort-direction="legalSortDirection"
             @sort="setLegalSort"
-            @view="(doc) => { selectedFile = doc; viewModalOpen = true }"
+            @view="
+              (doc) => {
+                selectedFile = doc
+                viewModalOpen = true
+              }
+            "
             @download="downloadFile"
-            @approve="(doc) => { approvingFile = doc; approvalModalOpen = true }"
-            @delete="(doc) => { deletingFile = doc; deleteModalOpen = true }"
+            @approve="
+              (doc) => {
+                approvingFile = doc
+                approvalModalOpen = true
+              }
+            "
+            @delete="
+              (doc) => {
+                deletingFile = doc
+                deleteModalOpen = true
+              }
+            "
           />
 
           <!-- Pagination -->
@@ -446,7 +479,10 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="legalCurrentPage <= 1"
-                @click="legalCurrentPage--; loadLegalDocuments()"
+                @click="
+                  legalCurrentPage--
+                  loadLegalDocuments()
+                "
               />
               <span class="text-sm mx-1">صفحه {{ legalCurrentPage }} از {{ legalTotalPages }}</span>
               <UButton
@@ -455,14 +491,20 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="legalCurrentPage >= legalTotalPages"
-                @click="legalCurrentPage++; loadLegalDocuments()"
+                @click="
+                  legalCurrentPage++
+                  loadLegalDocuments()
+                "
               />
               <USelect
                 v-model="legalPageSize"
                 :items="[10, 20, 50, 100]"
                 size="sm"
                 class="w-20"
-                @update:model-value="legalCurrentPage = 1; loadLegalDocuments()"
+                @update:model-value="
+                  legalCurrentPage = 1
+                  loadLegalDocuments()
+                "
               />
             </div>
           </div>
@@ -470,29 +512,13 @@ onMounted(async () => {
       </div>
 
       <!-- Modals -->
-      <ProductFileUploadModal
-        v-model:open="uploadModalOpen"
-        :product-id="productId"
-        :product-title="productTitle"
-        @upload="handleUpload"
-      />
+      <ProductFileUploadModal v-model:open="uploadModalOpen" :product-id="productId" :product-title="productTitle" @upload="handleUpload" />
 
-      <ProductFileViewModal
-        v-model:open="viewModalOpen"
-        :file="selectedFile as ProductFile"
-      />
+      <ProductFileViewModal v-model:open="viewModalOpen" :file="selectedFile as ProductFile" />
 
-      <ProductFileApprovalModal
-        v-model:open="approvalModalOpen"
-        :file="approvingFile as ProductFile"
-        @submit="handleApproval"
-      />
+      <ProductFileApprovalModal v-model:open="approvalModalOpen" :file="approvingFile as ProductFile" @submit="handleApproval" />
 
-      <ProductFileDeleteModal
-        v-model:open="deleteModalOpen"
-        :file="deletingFile as ProductFile"
-        @confirm="handleDelete"
-      />
+      <ProductFileDeleteModal v-model:open="deleteModalOpen" :file="deletingFile as ProductFile" @confirm="handleDelete" />
     </div>
   </ClientOnly>
 </template>

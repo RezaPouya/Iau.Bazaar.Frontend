@@ -38,9 +38,12 @@ const getSortIcon = (key: string) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'Approved': return { color: 'success', label: 'تایید شده' }
-    case 'Rejected': return { color: 'error', label: 'رد شده' }
-    default: return { color: 'warning', label: 'در انتظار تایید' }
+    case 'Approved':
+      return { color: 'success', label: 'تایید شده' }
+    case 'Rejected':
+      return { color: 'error', label: 'رد شده' }
+    default:
+      return { color: 'warning', label: 'در انتظار تایید' }
   }
 }
 
@@ -73,11 +76,7 @@ const formatFileSize = (bytes: number) => {
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="item in data"
-            :key="item.id"
-            class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
+          <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
             <td class="px-3 py-1.5 text-center">{{ item.id }}</td>
             <td class="px-3 py-1.5 text-right">{{ item.title }}</td>
             <td class="px-3 py-1.5 text-center">
@@ -109,12 +108,7 @@ const formatFileSize = (bytes: number) => {
                   </UButton>
                 </UTooltip>
                 <UTooltip :text="item.approvalStatus === 'Approved' ? 'رد' : 'تایید'">
-                  <UButton
-                    size="xs"
-                    :color="item.approvalStatus === 'Approved' ? 'error' : 'success'"
-                    variant="ghost"
-                    @click="emit('approve', item)"
-                  >
+                  <UButton size="xs" :color="item.approvalStatus === 'Approved' ? 'error' : 'success'" variant="ghost" @click="emit('approve', item)">
                     <UIcon :name="item.approvalStatus === 'Approved' ? 'i-lucide-x-circle' : 'i-lucide-check-circle'" />
                   </UButton>
                 </UTooltip>
@@ -127,9 +121,7 @@ const formatFileSize = (bytes: number) => {
             </td>
           </tr>
           <tr v-if="data.length === 0">
-            <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
-              هیچ سندی یافت نشد
-            </td>
+            <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ سندی یافت نشد</td>
           </tr>
         </tbody>
       </table>
