@@ -36,7 +36,7 @@ const navigation = [
   },
   {
     label: 'مدیریت رسانه',
-    icon: 'i-lucide-folder-image',
+    icon: 'i-lucide-folder',
     to: '/admin/media'
   },
   {
