@@ -1,4 +1,3 @@
-<!-- app/pages/account/forgot-password.vue -->
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
@@ -33,6 +32,7 @@ const verifySchema = z
     path: ['confirmPassword']
   })
 
+// ---------- event handlers ----------
 const sendOtp = async (event: FormSubmitEvent<any>) => {
   loading.value = true
   try {
@@ -82,6 +82,15 @@ const resetPassword = async (event: FormSubmitEvent<any>) => {
     loading.value = false
   }
 }
+
+const goBackToRequest = () => {
+  step.value = 'request'
+  otpCode.value = ''
+}
+
+const goToLogin = () => {
+  navigateTo('/account/login')
+}
 </script>
 
 <template>
@@ -103,11 +112,15 @@ const resetPassword = async (event: FormSubmitEvent<any>) => {
         </UFormField>
 
         <div class="mt-5">
-          <UButton type="submit" color="primary" block size="lg" :loading="loading"> ارسال کد تایید </UButton>
+          <UButton type="submit" color="primary" block size="lg" :loading="loading">
+            ارسال کد تایید
+          </UButton>
         </div>
 
         <div class="text-center text-sm mt-4">
-          <NuxtLink to="/account/login" class="text-primary-600 hover:underline"> بازگشت به صفحه ورود </NuxtLink>
+          <UButton color="neutral" variant="ghost" @click="goToLogin">
+            بازگشت به صفحه ورود
+          </UButton>
         </div>
       </UForm>
 
@@ -126,18 +139,13 @@ const resetPassword = async (event: FormSubmitEvent<any>) => {
         </UFormField>
 
         <div class="mt-5">
-          <UButton type="submit" color="primary" block size="lg" :loading="loading"> تغییر رمز عبور </UButton>
+          <UButton type="submit" color="primary" block size="lg" :loading="loading">
+            تغییر رمز عبور
+          </UButton>
         </div>
 
         <div class="text-center text-sm mt-4">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="
-              step = 'request'
-              otpCode = ''
-            "
-          >
+          <UButton color="neutral" variant="ghost" @click="goBackToRequest">
             ارسال مجدد کد
           </UButton>
         </div>

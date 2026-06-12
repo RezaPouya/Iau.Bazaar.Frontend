@@ -1,4 +1,3 @@
-<!-- app/pages/admin/products/files/[id].vue -->
 <script setup lang="ts">
 import type { ProductFile, ProductLegalDocument } from '~/types/product-file'
 import { GridFilterOperation } from '~/types/grid'
@@ -67,6 +66,15 @@ const approvingFile = ref<ProductFile | ProductLegalDocument | null>(null)
 const deleteModalOpen = ref(false)
 const deletingFile = ref<ProductFile | ProductLegalDocument | null>(null)
 
+// ---------- computed ----------
+const fileTotalPages = computed(() => Math.ceil(fileTotals.value / filePageSize.value))
+const fileStartIndex = computed(() => (fileCurrentPage.value - 1) * filePageSize.value + 1)
+const fileEndIndex = computed(() => Math.min(fileCurrentPage.value * filePageSize.value, fileTotals.value))
+
+const legalTotalPages = computed(() => Math.ceil(legalTotals.value / legalPageSize.value))
+const legalStartIndex = computed(() => (legalCurrentPage.value - 1) * legalPageSize.value + 1)
+const legalEndIndex = computed(() => Math.min(legalCurrentPage.value * legalPageSize.value, legalTotals.value))
+
 // ---------- load files ----------
 const loadFiles = async () => {
   fileLoading.value = true
@@ -100,13 +108,12 @@ const loadFiles = async () => {
       pageSize: filePageSize.value,
       inputParams: {
         filters,
-        sort:
-          fileSortKey.value && fileSortDirection.value
-            ? {
-                propertyName: fileSortKey.value,
-                ascending: fileSortDirection.value === 'asc'
-              }
-            : null
+        sort: fileSortKey.value && fileSortDirection.value
+          ? {
+              propertyName: fileSortKey.value,
+              ascending: fileSortDirection.value === 'asc'
+            }
+          : null
       }
     }
 
@@ -136,13 +143,12 @@ const loadLegalDocuments = async () => {
       pageSize: legalPageSize.value,
       inputParams: {
         filters,
-        sort:
-          legalSortKey.value && legalSortDirection.value
-            ? {
-                propertyName: legalSortKey.value,
-                ascending: legalSortDirection.value === 'asc'
-              }
-            : null
+        sort: legalSortKey.value && legalSortDirection.value
+          ? {
+              propertyName: legalSortKey.value,
+              ascending: legalSortDirection.value === 'asc'
+            }
+          : null
       }
     }
 
@@ -160,15 +166,6 @@ const loadLegalDocuments = async () => {
     legalLoading.value = false
   }
 }
-
-// ---------- pagination ----------
-const fileTotalPages = computed(() => Math.ceil(fileTotals.value / filePageSize.value))
-const fileStartIndex = computed(() => (fileCurrentPage.value - 1) * filePageSize.value + 1)
-const fileEndIndex = computed(() => Math.min(fileCurrentPage.value * filePageSize.value, fileTotals.value))
-
-const legalTotalPages = computed(() => Math.ceil(legalTotals.value / legalPageSize.value))
-const legalStartIndex = computed(() => (legalCurrentPage.value - 1) * legalPageSize.value + 1)
-const legalEndIndex = computed(() => Math.min(legalCurrentPage.value * legalPageSize.value, legalTotals.value))
 
 // ---------- sorting ----------
 const setFileSort = (key: string) => {
@@ -213,6 +210,61 @@ const clearFileFilters = () => {
   loadFiles()
 }
 
+// ---------- modal open handlers ----------
+const openViewModal = (file: ProductFile | ProductLegalDocument) => {
+  selectedFile.value = file
+  viewModalOpen.value = true
+}
+
+const openApprovalModal = (file: ProductFile | ProductLegalDocument) => {
+  approvingFile.value = file
+  approvalModalOpen.value = true
+}
+
+const openDeleteModal = (file: ProductFile | ProductLegalDocument) => {
+  deletingFile.value = file
+  deleteModalOpen.value = true
+}
+
+// ---------- pagination handlers ----------
+const prevFilePage = () => {
+  if (fileCurrentPage.value > 1) {
+    fileCurrentPage.value--
+    loadFiles()
+  }
+}
+
+const nextFilePage = () => {
+  if (fileCurrentPage.value < fileTotalPages.value) {
+    fileCurrentPage.value++
+    loadFiles()
+  }
+}
+
+const changeFilePageSize = () => {
+  fileCurrentPage.value = 1
+  loadFiles()
+}
+
+const prevLegalPage = () => {
+  if (legalCurrentPage.value > 1) {
+    legalCurrentPage.value--
+    loadLegalDocuments()
+  }
+}
+
+const nextLegalPage = () => {
+  if (legalCurrentPage.value < legalTotalPages.value) {
+    legalCurrentPage.value++
+    loadLegalDocuments()
+  }
+}
+
+const changeLegalPageSize = () => {
+  legalCurrentPage.value = 1
+  loadLegalDocuments()
+}
+
 // ---------- upload handler ----------
 const handleUpload = async (formData: FormData) => {
   try {
@@ -253,7 +305,7 @@ const downloadFile = async (file: ProductFile | ProductLegalDocument) => {
 }
 
 // ---------- approval handler ----------
-const handleApproval = async (approved: boolean, rejectionReason: string) => {
+const submitApproval = async (approved: boolean, rejectionReason: string) => {
   if (!approvingFile.value) return
 
   try {
@@ -278,7 +330,7 @@ const handleApproval = async (approved: boolean, rejectionReason: string) => {
 }
 
 // ---------- delete handler ----------
-const handleDelete = async () => {
+const confirmDelete = async () => {
   if (!deletingFile.value) return
 
   try {
@@ -372,25 +424,10 @@ onMounted(async () => {
             :sort-key="fileSortKey"
             :sort-direction="fileSortDirection"
             @sort="setFileSort"
-            @view="
-              (file) => {
-                selectedFile = file
-                viewModalOpen = true
-              }
-            "
+            @view="openViewModal"
             @download="downloadFile"
-            @approve="
-              (file) => {
-                approvingFile = file
-                approvalModalOpen = true
-              }
-            "
-            @delete="
-              (file) => {
-                deletingFile = file
-                deleteModalOpen = true
-              }
-            "
+            @approve="openApprovalModal"
+            @delete="openDeleteModal"
           />
 
           <!-- Pagination -->
@@ -403,10 +440,7 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="fileCurrentPage <= 1"
-                @click="
-                  fileCurrentPage--
-                  loadFiles()
-                "
+                @click="prevFilePage"
               />
               <span class="text-sm mx-1">صفحه {{ fileCurrentPage }} از {{ fileTotalPages }}</span>
               <UButton
@@ -415,20 +449,14 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="fileCurrentPage >= fileTotalPages"
-                @click="
-                  fileCurrentPage++
-                  loadFiles()
-                "
+                @click="nextFilePage"
               />
               <USelect
                 v-model="filePageSize"
                 :items="[10, 20, 50, 100]"
                 size="sm"
                 class="w-20"
-                @update:model-value="
-                  fileCurrentPage = 1
-                  loadFiles()
-                "
+                @update:model-value="changeFilePageSize"
               />
             </div>
           </div>
@@ -448,25 +476,10 @@ onMounted(async () => {
             :sort-key="legalSortKey"
             :sort-direction="legalSortDirection"
             @sort="setLegalSort"
-            @view="
-              (doc) => {
-                selectedFile = doc
-                viewModalOpen = true
-              }
-            "
+            @view="openViewModal"
             @download="downloadFile"
-            @approve="
-              (doc) => {
-                approvingFile = doc
-                approvalModalOpen = true
-              }
-            "
-            @delete="
-              (doc) => {
-                deletingFile = doc
-                deleteModalOpen = true
-              }
-            "
+            @approve="openApprovalModal"
+            @delete="openDeleteModal"
           />
 
           <!-- Pagination -->
@@ -479,10 +492,7 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="legalCurrentPage <= 1"
-                @click="
-                  legalCurrentPage--
-                  loadLegalDocuments()
-                "
+                @click="prevLegalPage"
               />
               <span class="text-sm mx-1">صفحه {{ legalCurrentPage }} از {{ legalTotalPages }}</span>
               <UButton
@@ -491,20 +501,14 @@ onMounted(async () => {
                 variant="ghost"
                 size="sm"
                 :disabled="legalCurrentPage >= legalTotalPages"
-                @click="
-                  legalCurrentPage++
-                  loadLegalDocuments()
-                "
+                @click="nextLegalPage"
               />
               <USelect
                 v-model="legalPageSize"
                 :items="[10, 20, 50, 100]"
                 size="sm"
                 class="w-20"
-                @update:model-value="
-                  legalCurrentPage = 1
-                  loadLegalDocuments()
-                "
+                @update:model-value="changeLegalPageSize"
               />
             </div>
           </div>
@@ -513,12 +517,9 @@ onMounted(async () => {
 
       <!-- Modals -->
       <ProductFileUploadModal v-model:open="uploadModalOpen" :product-id="productId" :product-title="productTitle" @upload="handleUpload" />
-
       <ProductFileViewModal v-model:open="viewModalOpen" :file="selectedFile as ProductFile" />
-
-      <ProductFileApprovalModal v-model:open="approvalModalOpen" :file="approvingFile as ProductFile" @submit="handleApproval" />
-
-      <ProductFileDeleteModal v-model:open="deleteModalOpen" :file="deletingFile as ProductFile" @confirm="handleDelete" />
+      <ProductFileApprovalModal v-model:open="approvalModalOpen" :file="approvingFile as ProductFile" @submit="submitApproval" />
+      <ProductFileDeleteModal v-model:open="deleteModalOpen" :file="deletingFile as ProductFile" @confirm="confirmDelete" />
     </div>
   </ClientOnly>
 </template>

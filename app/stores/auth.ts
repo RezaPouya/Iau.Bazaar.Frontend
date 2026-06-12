@@ -1,42 +1,57 @@
 import { defineStore } from 'pinia'
-import { useAccountService } from '~/services/account.service'
 import type { AuthUser, LoginResponse } from '~/types/auth'
 import { getTokenExpiration } from '~/utils/jwt'
+import { useAccountService } from '~/services/account.service'
 
 export const useAuthStore = defineStore('auth', () => {
-  const accessToken = ref('')
-  const refreshToken = ref('')
+  const accessToken = ref<string>('')
+  const refreshToken = ref<string>('')
   const user = ref<AuthUser | null>(null)
+
   const refreshTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
   const isRefreshing = ref(false)
-  const isAuthenticated = computed(() => !!accessToken.value)
+  const isHydrated = ref(false)
 
-  const restoreSession = () => {
-    if (!import.meta.client) {
-      return false
-    }
+  const isAuthenticated = computed(
+    () => isHydrated.value && !!accessToken.value
+  )
 
-    const storedAccessToken = localStorage.getItem('access_token')
-    const storedRefreshToken = localStorage.getItem('refresh_token')
-    const storedUser = localStorage.getItem('user')
+  /* ----------------------------------
+   * Helpers
+   * ---------------------------------- */
 
-    if (!storedAccessToken || !storedRefreshToken || !storedUser) {
-      return false
-    }
-
-    try {
-      accessToken.value = storedAccessToken
-      refreshToken.value = storedRefreshToken
-      user.value = JSON.parse(storedUser)
-
-      scheduleRefresh()
-
-      return true
-    } catch {
-      clearAuth()
-      return false
+  const clearRefreshTimer = () => {
+    if (refreshTimeout.value) {
+      clearTimeout(refreshTimeout.value)
+      refreshTimeout.value = null
     }
   }
+
+  const persistSession = (data?: {
+    accessToken: string
+    refreshToken: string
+    user: AuthUser
+  }) => {
+    if (!import.meta.client) return
+
+    if (!data) return
+
+    localStorage.setItem('access_token', data.accessToken)
+    localStorage.setItem('refresh_token', data.refreshToken)
+    localStorage.setItem('user', JSON.stringify(data.user))
+  }
+
+  const removeSession = () => {
+    if (!import.meta.client) return
+
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+  }
+
+  /* ----------------------------------
+   * Core auth state
+   * ---------------------------------- */
 
   const setAuth = (data: LoginResponse) => {
     accessToken.value = data.accessToken
@@ -51,11 +66,11 @@ export const useAuthStore = defineStore('auth', () => {
       phoneNumber: data.phoneNumber
     }
 
-    if (import.meta.client) {
-      localStorage.setItem('access_token', data.accessToken)
-      localStorage.setItem('refresh_token', data.refreshToken)
-      localStorage.setItem('user', JSON.stringify(user.value))
-    }
+    persistSession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      user: user.value
+    })
 
     scheduleRefresh()
   }
@@ -65,31 +80,68 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken.value = ''
     user.value = null
 
-    if (import.meta.client) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('user')
+    clearRefreshTimer()
+    removeSession()
+  }
+
+  /* ----------------------------------
+   * Restore session
+   * ---------------------------------- */
+
+  const restoreSession = () => {
+    if (!import.meta.client) {
+      isHydrated.value = true
+      return false
     }
 
-    if (refreshTimeout.value) {
-      clearTimeout(refreshTimeout.value)
-      refreshTimeout.value = null
+    try {
+      const storedAccessToken = localStorage.getItem('access_token')
+      const storedRefreshToken = localStorage.getItem('refresh_token')
+      const storedUser = localStorage.getItem('user')
+
+      if (!storedAccessToken || !storedRefreshToken || !storedUser) {
+        isHydrated.value = true
+        return false
+      }
+
+      accessToken.value = storedAccessToken
+      refreshToken.value = storedRefreshToken
+      user.value = JSON.parse(storedUser)
+
+      scheduleRefresh()
+
+      isHydrated.value = true
+      return true
+    } catch (err) {
+      console.error('restoreSession failed:', err)
+      clearAuth()
+      isHydrated.value = true
+      return false
     }
   }
 
+  /* ----------------------------------
+   * Auth actions
+   * ---------------------------------- */
+
   const login = async (userName: string, password: string) => {
-    const service = useAccountService()
+    try {
+      const service = useAccountService()
 
-    const response = await service.signInByPassword({
-      userName,
-      password
-    })
+      const response = await service.signInByPassword({
+        userName,
+        password
+      })
 
-    if (!response.isSuccess) {
-      throw new Error(response.message)
+      if (!response.isSuccess) {
+        throw new Error(response.message)
+      }
+
+      setAuth(response.data)
+    } catch (err) {
+      clearAuth()
+      throw err
     }
-
-    setAuth(response.data)
   }
 
   const logout = async () => {
@@ -98,51 +150,50 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { $api } = useNuxtApp()
       await $api.post('/account/logout')
+
       toast.success('خروج موفق', 'با موفقیت از حساب کاربری خارج شدید')
     } catch {
       toast.error('هشدار', 'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد')
     } finally {
       clearAuth()
-
       await navigateTo('/login')
     }
   }
 
+  /* ----------------------------------
+   * Token refresh logic
+   * ---------------------------------- */
+
   const scheduleRefresh = () => {
-    if (!accessToken || !accessToken.value) {
-      return
-    }
+    if (!accessToken.value) return
 
     const expiration = getTokenExpiration(accessToken.value)
-
     if (!expiration) {
       clearAuth()
       return
     }
 
-    const timeout = expiration - Date.now() - 60000
+    const safetyBuffer = 60_000
+    const delay = expiration - Date.now() - safetyBuffer
 
-    if (timeout <= 0) {
-      refreshAuthToken()
+    clearRefreshTimer()
+
+    if (delay <= 0) {
+      refreshAuthToken().catch(() => {})
       return
     }
 
-    if (refreshTimeout.value) {
-      clearTimeout(refreshTimeout.value)
-    }
-
-    refreshTimeout.value = setTimeout(async () => {
-      await refreshAuthToken()
-    }, timeout)
+    refreshTimeout.value = setTimeout(() => {
+      refreshAuthToken().catch(() => {})
+    }, delay)
   }
 
   const refreshAuthToken = async () => {
-    if (isRefreshing.value || !refreshToken.value) {
-      return
-    }
+    if (isRefreshing.value || !refreshToken.value) return
 
     try {
       isRefreshing.value = true
+
       const service = useAccountService()
       const response = await service.refreshToken({
         refreshToken: refreshToken.value
@@ -153,25 +204,34 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       setAuth(response.data)
-    } catch (error) {
-      // ✅ مهم: clear auth و پرتاب خطا
+    } catch (err) {
+      console.error('refreshAuthToken failed:', err)
       clearAuth()
-      console.error('Error refreshing token:', error)
-      throw error
     } finally {
       isRefreshing.value = false
     }
   }
+
+  /* ----------------------------------
+   * Expose
+   * ---------------------------------- */
+
   return {
     accessToken,
     refreshToken,
     user,
+
     isAuthenticated,
+    isRefreshing,
+
     login,
     logout,
+
     setAuth,
     clearAuth,
+
     restoreSession,
+
     refreshAuthToken,
     scheduleRefresh
   }
