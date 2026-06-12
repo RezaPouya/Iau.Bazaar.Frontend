@@ -4,32 +4,21 @@ import type { AuthUser, LoginResponse } from '~/types/auth'
 import { getTokenExpiration } from '~/utils/jwt'
 
 export const useAuthStore = defineStore('auth', () => {
-  /*
-    |--------------------------------------------------------------------------
-    | State
-    |--------------------------------------------------------------------------
-    */
-
   const accessToken = ref('')
   const refreshToken = ref('')
   const user = ref<AuthUser | null>(null)
   const refreshTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
   const isRefreshing = ref(false)
-
   const isAuthenticated = computed(() => !!accessToken.value)
 
   const restoreSession = () => {
-    if (!process.client) {
+    if (!import.meta.client) {
       return false
     }
 
     const storedAccessToken = localStorage.getItem('access_token')
     const storedRefreshToken = localStorage.getItem('refresh_token')
     const storedUser = localStorage.getItem('user')
-
-    // const storedAccessToken = sessionStorage.getItem('access_token')
-    // const storedRefreshToken = sessionStorage.getItem('refresh_token')
-    // const storedUser = sessionStorage.getItem('user')
 
     if (!storedAccessToken || !storedRefreshToken || !storedUser) {
       return false
@@ -45,7 +34,6 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     } catch {
       clearAuth()
-
       return false
     }
   }
@@ -70,7 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
       phoneNumber: data.phoneNumber
     }
 
-    if (process.client) {
+    if (import.meta.client) {
       // sessionStorage.setItem('access_token', data.accessToken)
       // sessionStorage.setItem('refresh_token', data.refreshToken)
       // sessionStorage.setItem('user', JSON.stringify(user.value))
@@ -91,16 +79,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const clearAuth = () => {
     accessToken.value = ''
-
     refreshToken.value = ''
-
     user.value = null
 
-    if (process.client) {
-      // sessionStorage.removeItem('access_token')
-      // sessionStorage.removeItem('refresh_token')
-      // sessionStorage.removeItem('user')
-
+    if (import.meta.client) {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
@@ -108,7 +90,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (refreshTimeout.value) {
       clearTimeout(refreshTimeout.value)
-
       refreshTimeout.value = null
     }
   }
