@@ -44,10 +44,7 @@ const loadUsers = async () => {
       }
     }
 
-    const response = await $api.post(
-      `/api/admin/companies/${props.companyId}/users/list`,
-      request
-    )
+    const response = await $api.post(`/api/admin/companies/${props.companyId}/users/list`, request)
     const result = response.data
     users.value = result.data ?? []
     totals.value = result.totals ?? 0
@@ -67,9 +64,7 @@ const addUser = async () => {
 
   addingUser.value = true
   try {
-    await $api.post(
-      `/api/admin/companies/${props.companyId}/users/add/${userIdToAdd.value}`
-    )
+    await $api.post(`/api/admin/companies/${props.companyId}/users/add/${userIdToAdd.value}`)
     toast.add({ title: 'کاربر با موفقیت اضافه شد', color: 'success' })
     addUserModalOpen.value = false
     userIdToAdd.value = null
@@ -102,10 +97,7 @@ const toggleUserActive = async (userId: number, isActive: boolean) => {
   if (!props.companyId) return
 
   try {
-    await $api.patch(
-      `/api/admin/companies/${props.companyId}/users/${userId}/toggle-active`,
-      !isActive
-    )
+    await $api.patch(`/api/admin/companies/${props.companyId}/users/${userId}/toggle-active`, !isActive)
     toast.add({ title: 'وضعیت کاربر با موفقیت تغییر کرد', color: 'success' })
     await loadUsers()
   } catch (error: any) {
@@ -155,9 +147,7 @@ const setPage = (page: number) => {
         <!-- Header with add button -->
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-semibold">لیست کاربران</h3>
-          <UButton size="sm" @click="addUserModalOpen = true">
-            افزودن کاربر
-          </UButton>
+          <UButton size="sm" @click="addUserModalOpen = true"> افزودن کاربر </UButton>
         </div>
 
         <!-- Users Table -->
@@ -191,29 +181,17 @@ const setPage = (page: number) => {
                   <td class="px-3 py-1.5 text-center">{{ user.joinedAtPersian }}</td>
                   <td class="px-3 py-1.5 text-center">
                     <div class="flex justify-center gap-1">
-                      <UButton
-                        size="xs"
-                        :color="user.isActive ? 'error' : 'success'"
-                        variant="ghost"
-                        @click="toggleUserActive(user.userId, user.isActive)"
-                      >
+                      <UButton size="xs" :color="user.isActive ? 'error' : 'success'" variant="ghost" @click="toggleUserActive(user.userId, user.isActive)">
                         <UIcon :name="user.isActive ? 'i-lucide-user-x' : 'i-lucide-user-check'" />
                       </UButton>
-                      <UButton
-                        size="xs"
-                        color="error"
-                        variant="ghost"
-                        @click="confirmRemoveUser(user.userId, user.fullName)"
-                      >
+                      <UButton size="xs" color="error" variant="ghost" @click="confirmRemoveUser(user.userId, user.fullName)">
                         <UIcon name="i-lucide-trash" />
                       </UButton>
                     </div>
                   </td>
                 </tr>
                 <tr v-if="users.length === 0">
-                  <td :colspan="6" class="px-3 py-4 text-center text-gray-500">
-                    هیچ کاربری یافت نشد
-                  </td>
+                  <td :colspan="6" class="px-3 py-4 text-center text-gray-500">هیچ کاربری یافت نشد</td>
                 </tr>
               </tbody>
             </table>
@@ -221,18 +199,9 @@ const setPage = (page: number) => {
 
           <!-- Pagination -->
           <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
-            <div class="text-gray-500">
-              {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totals) }} از {{ totals }}
-            </div>
+            <div class="text-gray-500">{{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totals) }} از {{ totals }}</div>
             <div class="flex gap-1 items-center">
-              <UButton
-                icon="i-lucide-chevron-right"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                :disabled="currentPage <= 1"
-                @click="setPage(currentPage - 1)"
-              />
+              <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
               <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
               <UButton
                 icon="i-lucide-chevron-left"
@@ -254,21 +223,12 @@ const setPage = (page: number) => {
     <template #body>
       <UForm class="space-y-4" @submit.prevent="addUser">
         <UFormField label="شناسه کاربر" required>
-          <UInput
-            v-model.number="userIdToAdd"
-            type="number"
-            placeholder="شناسه کاربر را وارد کنید"
-            class="w-full"
-          />
+          <UInput v-model.number="userIdToAdd" type="number" placeholder="شناسه کاربر را وارد کنید" class="w-full" />
         </UFormField>
 
         <div class="flex justify-end gap-2">
-          <UButton color="neutral" variant="ghost" @click="addUserModalOpen = false">
-            انصراف
-          </UButton>
-          <UButton type="submit" color="primary" :loading="addingUser">
-            افزودن
-          </UButton>
+          <UButton color="neutral" variant="ghost" @click="addUserModalOpen = false"> انصراف </UButton>
+          <UButton type="submit" color="primary" :loading="addingUser"> افزودن </UButton>
         </div>
       </UForm>
     </template>

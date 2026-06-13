@@ -144,12 +144,13 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-        sort: sortKey.value && sortDirection.value
-          ? {
-              propertyName: sortKey.value,
-              ascending: sortDirection.value === 'asc'
-            }
-          : null
+        sort:
+          sortKey.value && sortDirection.value
+            ? {
+                propertyName: sortKey.value,
+                ascending: sortDirection.value === 'asc'
+              }
+            : null
       }
     }
 
@@ -244,7 +245,7 @@ const toggleSelectAll = () => {
     selectedRows.value.clear()
     selectAll.value = false
   } else {
-    data.value.forEach(item => selectedRows.value.add(item.id))
+    data.value.forEach((item) => selectedRows.value.add(item.id))
     selectAll.value = true
   }
 }
@@ -472,20 +473,16 @@ onMounted(() => {
         <div class="flex gap-2">
           <UDropdownMenu
             :items="[
-              bulkStatusOptions.map(opt => ({
+              bulkStatusOptions.map((opt) => ({
                 label: opt.label,
                 icon: opt.icon,
                 onSelect: () => bulkUpdateStatus(opt.value as MessageStatus)
               }))
             ]"
           >
-            <UButton size="sm" color="neutral" variant="outline">
-              تغییر وضعیت گروهی
-            </UButton>
+            <UButton size="sm" color="neutral" variant="outline"> تغییر وضعیت گروهی </UButton>
           </UDropdownMenu>
-          <UButton size="sm" color="error" variant="outline" @click="bulkDelete">
-            حذف گروهی
-          </UButton>
+          <UButton size="sm" color="error" variant="outline" @click="bulkDelete"> حذف گروهی </UButton>
         </div>
       </div>
 
@@ -502,28 +499,13 @@ onMounted(() => {
             <UInput v-model="filterSubject" placeholder="موضوع..." class="w-full text-right" />
           </UFormField>
           <UFormField label="وضعیت" class="w-28">
-            <USelect
-              v-model="filterStatus"
-              :items="statusOptions"
-              class="w-full"
-              :popper="{ placement: 'bottom-end' }"
-            />
+            <USelect v-model="filterStatus" :items="statusOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
           <UFormField label="اولویت" class="w-24">
-            <USelect
-              v-model="filterPriority"
-              :items="priorityOptions"
-              class="w-full"
-              :popper="{ placement: 'bottom-end' }"
-            />
+            <USelect v-model="filterPriority" :items="priorityOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
           <UFormField label="دسته‌بندی" class="w-28">
-            <USelect
-              v-model="filterCategory"
-              :items="categoryOptions"
-              class="w-full"
-              :popper="{ placement: 'bottom-end' }"
-            />
+            <USelect v-model="filterCategory" :items="categoryOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
           <UFormField label="از تاریخ" class="w-32">
             <UInput v-model="dateFrom" type="date" class="w-full" />
@@ -592,23 +574,13 @@ onMounted(() => {
                   </UBadge>
                 </td>
                 <td class="px-3 py-1.5 text-center">
-                  <UBadge
-                    :color="getPriorityBadge(item.priority).color"
-                    variant="subtle"
-                    size="sm"
-                    class="flex items-center gap-1 w-fit mx-auto"
-                  >
+                  <UBadge :color="getPriorityBadge(item.priority).color" variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
                     <UIcon :name="getPriorityBadge(item.priority).icon" class="size-3" />
                     {{ getPriorityBadge(item.priority).label }}
                   </UBadge>
                 </td>
                 <td class="px-3 py-1.5 text-center">
-                  <UBadge
-                    :color="getStatusBadge(item.status).color"
-                    variant="subtle"
-                    size="sm"
-                    class="flex items-center gap-1 w-fit mx-auto"
-                  >
+                  <UBadge :color="getStatusBadge(item.status).color" variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
                     <UIcon :name="getStatusBadge(item.status).icon" class="size-3" />
                     {{ getStatusBadge(item.status).label }}
                   </UBadge>
@@ -616,29 +588,17 @@ onMounted(() => {
                 <td class="px-3 py-1.5 text-center">{{ item.createdAtPersian }}</td>
                 <td class="px-3 py-1.5 text-center">
                   <div class="flex justify-center gap-1">
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      @click="viewMessage(item)"
-                    >
+                    <UButton size="xs" color="neutral" variant="ghost" @click="viewMessage(item)">
                       <UIcon name="i-lucide-eye" />
                     </UButton>
-                    <UButton
-                      size="xs"
-                      color="error"
-                      variant="ghost"
-                      @click="deleteMessage(item.id)"
-                    >
+                    <UButton size="xs" color="error" variant="ghost" @click="deleteMessage(item.id)">
                       <UIcon name="i-lucide-trash" />
                     </UButton>
                   </div>
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length + 1" class="px-3 py-4 text-center text-gray-500">
-                  هیچ پیامی یافت نشد
-                </td>
+                <td :colspan="columns.length + 1" class="px-3 py-4 text-center text-gray-500">هیچ پیامی یافت نشد</td>
               </tr>
             </tbody>
           </table>
@@ -648,14 +608,7 @@ onMounted(() => {
         <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
           <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
           <div class="flex gap-1 items-center">
-            <UButton
-              icon="i-lucide-chevron-right"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage <= 1"
-              @click="setPage(currentPage - 1)"
-            />
+            <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
             <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
             <UButton
               icon="i-lucide-chevron-left"
@@ -665,24 +618,13 @@ onMounted(() => {
               :disabled="currentPage >= totalPages"
               @click="setPage(currentPage + 1)"
             />
-            <USelect
-              v-model="pageSize"
-              :items="[10, 20, 50, 100]"
-              size="sm"
-              class="w-20"
-              @update:model-value="setPageSize"
-            />
+            <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
           </div>
         </div>
       </div>
 
       <!-- Message View Modal -->
-      <MessageViewModal
-        v-model:open="viewModalOpen"
-        :message="selectedMessage"
-        @reply="loadData"
-        @status-change="loadData"
-      />
+      <MessageViewModal v-model:open="viewModalOpen" :message="selectedMessage" @reply="loadData" @status-change="loadData" />
     </div>
   </ClientOnly>
 </template>

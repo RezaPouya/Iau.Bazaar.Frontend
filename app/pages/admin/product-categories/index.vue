@@ -108,6 +108,7 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
+<<<<<<< HEAD
         sort: sortKey.value && sortDirection.value
           ? {
               propertyName: sortKey.value,
@@ -257,9 +258,7 @@ onMounted(() => {
     <div class="compact-grid">
       <div class="mb-3 flex justify-between items-center">
         <h1 class="text-xl font-bold">مدیریت دسته‌بندی محصولات</h1>
-        <UButton color="primary" size="sm" @click="openCreateModal">
-          افزودن دسته‌بندی
-        </UButton>
+        <UButton color="primary" size="sm" @click="openCreateModal"> افزودن دسته‌بندی </UButton>
       </div>
 
       <!-- Filters -->
@@ -306,11 +305,7 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="item in data"
-                :key="item.id"
-                class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
+              <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td class="px-3 py-1.5 text-center">{{ item.id }}</td>
                 <td class="px-3 py-1.5 text-right">{{ item.name }}</td>
                 <td class="px-3 py-1.5 text-center">{{ item.priority }}</td>
@@ -327,9 +322,7 @@ onMounted(() => {
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
-                  هیچ داده‌ای یافت نشد
-                </td>
+                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ داده‌ای یافت نشد</td>
               </tr>
             </tbody>
           </table>
@@ -339,14 +332,7 @@ onMounted(() => {
         <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
           <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
           <div class="flex gap-1 items-center">
-            <UButton
-              icon="i-lucide-chevron-right"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage <= 1"
-              @click="setPage(currentPage - 1)"
-            />
+            <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
             <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
             <UButton
               icon="i-lucide-chevron-left"
@@ -356,23 +342,13 @@ onMounted(() => {
               :disabled="currentPage >= totalPages"
               @click="setPage(currentPage + 1)"
             />
-            <USelect
-              v-model="pageSize"
-              :items="[10, 20, 50, 100]"
-              size="sm"
-              class="w-20"
-              @update:model-value="setPageSize"
-            />
+            <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
           </div>
         </div>
       </div>
 
       <!-- Create/Edit Modal -->
-      <UModal
-        v-model:open="formModalOpen"
-        :title="editingCategory ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی'"
-        class="max-w-md"
-      >
+      <UModal v-model:open="formModalOpen" :title="editingCategory ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی'" class="max-w-md">
         <template #body>
           <UForm :schema="schema" :state="form" @submit="handleSave" class="space-y-4">
             <UFormField label="نام دسته‌بندی" name="name" required>

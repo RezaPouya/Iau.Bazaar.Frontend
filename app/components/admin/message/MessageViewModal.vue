@@ -145,48 +145,25 @@ const confirmDelete = () => {
 </script>
 
 <template>
-  <UModal
-    :open="open"
-    title="مشاهده پیام"
-    class="max-w-4xl"
-    @update:open="closeModal"
-  >
+  <UModal :open="open" title="مشاهده پیام" class="max-w-4xl" @update:open="closeModal">
     <template #body>
       <div v-if="message" class="space-y-4">
         <!-- Header with status badges -->
         <div class="flex flex-wrap justify-between items-start gap-2 pb-3 border-b border-gray-200 dark:border-gray-700">
           <div class="flex flex-wrap gap-2">
-            <UBadge
-              :color="message.isSeen ? 'info' : 'warning'"
-              variant="subtle"
-              size="sm"
-              class="cursor-pointer"
-              @click="toggleSeen"
-            >
+            <UBadge :color="message.isSeen ? 'info' : 'warning'" variant="subtle" size="sm" class="cursor-pointer" @click="toggleSeen">
               <UIcon :name="message.isSeen ? 'i-lucide-eye' : 'i-lucide-eye-off'" class="ml-1 size-3" />
               {{ message.isSeen ? 'خوانده شده' : 'خوانده نشده' }}
             </UBadge>
 
-            <UBadge
-              :color="message.isAnswered ? 'success' : 'neutral'"
-              variant="subtle"
-              size="sm"
-              class="cursor-pointer"
-              @click="toggleAnswered"
-            >
+            <UBadge :color="message.isAnswered ? 'success' : 'neutral'" variant="subtle" size="sm" class="cursor-pointer" @click="toggleAnswered">
               <UIcon :name="message.isAnswered ? 'i-lucide-reply' : 'i-lucide-reply-all'" class="ml-1 size-3" />
               {{ message.isAnswered ? 'پاسخ داده شده' : 'پاسخ داده نشده' }}
             </UBadge>
           </div>
 
           <div class="flex gap-1">
-            <UButton
-              size="sm"
-              color="error"
-              variant="ghost"
-              :loading="deleting"
-              @click="confirmDelete"
-            >
+            <UButton size="sm" color="error" variant="ghost" :loading="deleting" @click="confirmDelete">
               <UIcon name="i-lucide-trash" class="size-4" />
             </UButton>
           </div>
@@ -248,23 +225,11 @@ const confirmDelete = () => {
 
           <!-- New/Edit answer -->
           <div class="space-y-3">
-            <UTextarea
-              v-model="adminNote"
-              placeholder="پاسخ خود را بنویسید..."
-              rows="4"
-              class="w-full"
-            />
+            <UTextarea v-model="adminNote" placeholder="پاسخ خود را بنویسید..." rows="4" class="w-full" />
 
             <div class="flex justify-end gap-2">
-              <UButton color="neutral" variant="ghost" @click="closeModal">
-                انصراف
-              </UButton>
-              <UButton
-                color="primary"
-                :loading="saving"
-                :disabled="!adminNote.trim()"
-                @click="saveAnswer"
-              >
+              <UButton color="neutral" variant="ghost" @click="closeModal"> انصراف </UButton>
+              <UButton color="primary" :loading="saving" :disabled="!adminNote.trim()" @click="saveAnswer">
                 <UIcon name="i-lucide-send" class="ml-1 size-4" />
                 ثبت پاسخ
               </UButton>

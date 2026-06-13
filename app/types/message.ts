@@ -1,4 +1,4 @@
-import type { GridPropertyFilter, GridSort } from "./grid"
+import type { GridPropertyFilter, GridSort } from './grid'
 
 // app/types/message.ts
 export interface ContactUsMessageDto {

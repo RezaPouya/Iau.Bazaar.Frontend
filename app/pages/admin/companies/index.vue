@@ -32,11 +32,12 @@ const fetchGrowthCenters = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    growthCenters.value = response.data.data?.map((gc: any) => ({
-      id: gc.id,
-      title: gc.title,
-      universityName: gc.universityName
-    })) || []
+    growthCenters.value =
+      response.data.data?.map((gc: any) => ({
+        id: gc.id,
+        title: gc.title,
+        universityName: gc.universityName
+      })) || []
   } catch (error) {
     console.error('خطا در دریافت مراکز رشد', error)
   }
@@ -91,12 +92,13 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-        sort: sortKey.value && sortDirection.value
-          ? {
-              propertyName: sortKey.value,
-              ascending: sortDirection.value === 'asc'
-            }
-          : null
+        sort:
+          sortKey.value && sortDirection.value
+            ? {
+                propertyName: sortKey.value,
+                ascending: sortDirection.value === 'asc'
+              }
+            : null
       }
     }
 
@@ -267,9 +269,7 @@ onMounted(() => {
     <div class="compact-grid">
       <div class="mb-3 flex justify-between items-center">
         <h1 class="text-xl font-bold">مدیریت شرکت‌ها</h1>
-        <UButton color="primary" size="sm" @click="openCreateModal">
-          افزودن شرکت
-        </UButton>
+        <UButton color="primary" size="sm" @click="openCreateModal"> افزودن شرکت </UButton>
       </div>
 
       <UCard class="mb-3 p-3">
@@ -385,9 +385,7 @@ onMounted(() => {
                 </td>
               </tr>
               <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">
-                  هیچ داده‌ای یافت نشد
-                </td>
+                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ داده‌ای یافت نشد</td>
               </tr>
             </tbody>
           </table>
@@ -423,11 +421,7 @@ onMounted(() => {
 
       <CompanyPreviewModal v-model:open="previewModalOpen" :html-content="previewHtml" />
 
-      <CompanyUsersModal
-        v-model:open="usersModalOpen"
-        :company-id="selectedCompanyId"
-        :company-title="selectedCompanyTitle"
-      />
+      <CompanyUsersModal v-model:open="usersModalOpen" :company-id="selectedCompanyId" :company-title="selectedCompanyTitle" />
     </div>
   </ClientOnly>
 </template>

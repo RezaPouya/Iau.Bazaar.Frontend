@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
 
-const color = computed(() => (colorMode.value === 'dark' ? '#1b1718' : 'white'))
+const color = computed(() => (colorMode.value === 'dark' ? '#1b1718' : '#f5f5f5'))
 
 useHead({
   meta: [
@@ -11,14 +11,13 @@ useHead({
   ],
   link: [{ rel: 'icon', href: '/favicon.ico' }],
   htmlAttrs: {
-    lang: 'en',
+    lang: 'fa-IR',
     dir: 'rtl'
   }
 })
 
-const title = 'Nuxt Dashboard Template'
-const description =
-  'A professional dashboard template built with Nuxt UI, featuring multiple pages, data visualization, and comprehensive management capabilities for creating powerful admin interfaces.'
+const title = 'بازار دانشگاه آزاد'
+const description = 'بازار دانشگاه آزاد'
 
 useSeoMeta({
   title,
@@ -33,7 +32,6 @@ useSeoMeta({
 <template>
   <UApp>
     <NuxtLoadingIndicator />
-
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

@@ -54,11 +54,12 @@ const fetchGrowthCenters = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    growthCenters.value = response.data.data?.map((gc: any) => ({
-      id: gc.id,
-      title: gc.title,
-      universityName: gc.universityName
-    })) || []
+    growthCenters.value =
+      response.data.data?.map((gc: any) => ({
+        id: gc.id,
+        title: gc.title,
+        universityName: gc.universityName
+      })) || []
   } catch (error) {
     console.error('خطا در دریافت مراکز رشد', error)
   }
@@ -112,10 +113,12 @@ onMounted(async () => {
           <UFormField label="مرکز رشد" required>
             <USelect
               v-model="form.growthCenterId"
-              :items="growthCenters.map((gc) => ({
-                label: gc.title + (gc.universityName ? ` (${gc.universityName})` : ''),
-                value: gc.id
-              }))"
+              :items="
+                growthCenters.map((gc) => ({
+                  label: gc.title + (gc.universityName ? ` (${gc.universityName})` : ''),
+                  value: gc.id
+                }))
+              "
               class="w-full"
               :popper="{ placement: 'bottom-end' }"
             />
