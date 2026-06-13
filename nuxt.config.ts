@@ -1,8 +1,33 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+// nuxt.config.ts
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@pinia/nuxt'],
+  modules: [
+    '@nuxt/eslint',
+    '@nuxt/ui',
+    '@vueuse/nuxt',
+    '@pinia/nuxt'
+  ],
 
-  plugins: ['~/plugins/api', '~/plugins/theme.client', '~/plugins/auth-init.client'],
+  plugins: [
+    { src: '~/plugins/theme.client.ts', mode: 'all' },
+    { src: '~/plugins/pinia-auth-init.ts', mode: 'client' },
+    { src: '~/plugins/api.ts', mode: 'client' }
+  ],
+
+  devtools: { enabled: true },
+
+  app: {
+    head: {
+      htmlAttrs: {
+        dir: 'rtl',
+        lang: 'fa-IR'
+      },
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+      ]
+    }
+  },
+  css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
     public: {
@@ -10,19 +35,28 @@ export default defineNuxtConfig({
     }
   },
 
-  devtools: {
-    enabled: true
-  },
-
-  css: ['~/assets/css/main.css'],
-
   routeRules: {
-    '/api/**': {
-      cors: true
-    }
+    '/api/**': { cors: true }
   },
 
   compatibilityDate: '2024-07-11',
+
+  // ✅ Using import.meta.env.PROD instead of process.env
+  nitro: import.meta.env.PROD
+    ? {
+        routeRules: {
+          '/**': {
+            headers: {
+              'X-Content-Type-Options': 'nosniff',
+              'X-Frame-Options': 'DENY',
+              'X-XSS-Protection': '1; mode=block',
+              'Referrer-Policy': 'strict-origin-when-cross-origin',
+              'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://localhost:7139"
+            }
+          }
+        }
+      }
+    : {},
 
   eslint: {
     config: {
@@ -32,29 +66,4 @@ export default defineNuxtConfig({
       }
     }
   },
-
-  app: {
-    head: {
-      meta: [{ charset: 'utf-8' }, { dir: 'rtl' }, { lang: 'fa' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }]
-    }
-  },
-
-  // Security headers for production only
-  nitro:
-    process.env.NODE_ENV === 'production'
-      ? {
-          routeRules: {
-            '/**': {
-              headers: {
-                'X-Content-Type-Options': 'nosniff',
-                'X-Frame-Options': 'DENY',
-                'X-XSS-Protection': '1; mode=block',
-                'Referrer-Policy': 'strict-origin-when-cross-origin',
-                'Content-Security-Policy':
-                  "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://your-production-api.com;"
-              }
-            }
-          }
-        }
-      : {} // No CSP headers in development
 })

@@ -16,10 +16,6 @@ export const useAuthStore = defineStore('auth', () => {
     () => isHydrated.value && !!accessToken.value
   )
 
-  /* ----------------------------------
-   * Helpers
-   * ---------------------------------- */
-
   const clearRefreshTimer = () => {
     if (refreshTimeout.value) {
       clearTimeout(refreshTimeout.value)
@@ -48,10 +44,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
   }
-
-  /* ----------------------------------
-   * Core auth state
-   * ---------------------------------- */
 
   const setAuth = (data: LoginResponse) => {
     accessToken.value = data.accessToken
@@ -84,10 +76,6 @@ export const useAuthStore = defineStore('auth', () => {
     removeSession()
   }
 
-  /* ----------------------------------
-   * Restore session
-   * ---------------------------------- */
-
   const restoreSession = () => {
     if (!import.meta.client) {
       isHydrated.value = true
@@ -119,10 +107,6 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
   }
-
-  /* ----------------------------------
-   * Auth actions
-   * ---------------------------------- */
 
   const login = async (userName: string, password: string) => {
     try {
@@ -159,10 +143,6 @@ export const useAuthStore = defineStore('auth', () => {
       await navigateTo('/login')
     }
   }
-
-  /* ----------------------------------
-   * Token refresh logic
-   * ---------------------------------- */
 
   const scheduleRefresh = () => {
     if (!accessToken.value) return
@@ -211,10 +191,6 @@ export const useAuthStore = defineStore('auth', () => {
       isRefreshing.value = false
     }
   }
-
-  /* ----------------------------------
-   * Expose
-   * ---------------------------------- */
 
   return {
     accessToken,
