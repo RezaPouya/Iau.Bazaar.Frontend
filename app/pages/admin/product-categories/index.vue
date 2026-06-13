@@ -108,7 +108,6 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-<<<<<<< HEAD
         sort: sortKey.value && sortDirection.value
           ? {
               propertyName: sortKey.value,

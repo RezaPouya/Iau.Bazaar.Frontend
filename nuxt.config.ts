@@ -9,7 +9,7 @@ export default defineNuxtConfig({
 
   plugins: [
     { src: '~/plugins/theme.client.ts', mode: 'all' },
-    { src: '~/plugins/pinia-auth-init.ts', mode: 'client' },
+    { src: '~/plugins/auth-init.client.ts', mode: 'client' },
     { src: '~/plugins/api.ts', mode: 'client' }
   ],
 
