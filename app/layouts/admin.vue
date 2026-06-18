@@ -58,6 +58,11 @@ const navigation = [
     label: 'مدیریت محصولات',
     icon: 'i-lucide-box',
     to: '/admin/products'
+  },
+  {
+    label: 'مدیریت سفارشات',
+    icon: 'i-lucide-shopping-cart',
+    to: '/admin/orders'
   }
 ]
 
