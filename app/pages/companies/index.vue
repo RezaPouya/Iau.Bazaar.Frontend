@@ -1,0 +1,276 @@
+<!-- app/pages/company/index.vue -->
+<script setup lang="ts">
+definePageMeta({
+  layout: 'company',
+  middleware: 'company',
+  title: 'داشبورد شرکت'
+})
+
+const auth = useAuthStore()
+const { $api } = useNuxtApp()
+const toast = useToast()
+
+// ========== State ==========
+const stats = ref({
+  totalProducts: 0,
+  totalOrders: 0,
+  pendingProducts: 0,
+  totalRevenue: 0,
+  totalFiles: 0,
+  pendingFiles: 0
+})
+
+const loading = ref(false)
+const recentOrders = ref<any[]>([])
+const recentProducts = ref<any[]>([])
+const pendingProductsList = ref<any[]>([])
+
+// ========== Load Dashboard Data ==========
+const loadDashboardData = async () => {
+  loading.value = true
+  try {
+    // دریافت آمار
+    const statsResponse = await $api.get('/api/company/dashboard/stats')
+    stats.value = statsResponse.data.data
+
+    // دریافت سفارشات اخیر
+    const ordersResponse = await $api.post('/api/company/orders/list', {
+      page: 1,
+      pageSize: 5,
+      inputParams: {
+        filters: [],
+        sort: { propertyName: 'orderDate', ascending: false }
+      }
+    })
+    recentOrders.value = ordersResponse.data.data ?? []
+
+    // دریافت محصولات اخیر
+    const productsResponse = await $api.post('/api/company/products/list', {
+      page: 1,
+      pageSize: 5,
+      inputParams: {
+        filters: [],
+        sort: { propertyName: 'createdAt', ascending: false }
+      }
+    })
+    recentProducts.value = productsResponse.data.data ?? []
+
+    // دریافت محصولات در انتظار تایید
+    const pendingResponse = await $api.post('/api/company/products/list', {
+      page: 1,
+      pageSize: 5,
+      inputParams: {
+        filters: [{ propertyName: 'approvalStatus', operation: 'equals', value: '0' }],
+        sort: { propertyName: 'createdAt', ascending: false }
+      }
+    })
+    pendingProductsList.value = pendingResponse.data.data ?? []
+  } catch (error: any) {
+    console.error('Error loading dashboard:', error)
+    toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })
+  } finally {
+    loading.value = false
+  }
+}
+
+// ========== Format Price ==========
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
+}
+
+// ========== Lifecycle ==========
+onMounted(() => {
+  loadDashboardData()
+})
+</script>
+
+<template>
+  <ClientOnly>
+    <div class="space-y-6">
+      <!-- Welcome Section -->
+      <div class="bg-gradient-to-l from-primary-600 to-primary-400 dark:from-primary-800 dark:to-primary-600 rounded-lg p-6 text-white">
+        <h1 class="text-2xl font-bold">خوش آمدید، {{ auth.user?.fullName }}</h1>
+        <p class="text-primary-100 mt-1">از اینجا می‌توانید محصولات، مدارک و سفارشات شرکت خود را مدیریت کنید.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <UCard class="text-center hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400">
+            <UIcon name="i-lucide-box" class="size-6" />
+          </div>
+          <div class="text-2xl font-bold mt-2">{{ stats.totalProducts }}</div>
+          <div class="text-sm text-dimmed">محصولات</div>
+        </UCard>
+
+        <UCard class="text-center hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400">
+            <UIcon name="i-lucide-shopping-cart" class="size-6" />
+          </div>
+          <div class="text-2xl font-bold mt-2">{{ stats.totalOrders }}</div>
+          <div class="text-sm text-dimmed">سفارشات</div>
+        </UCard>
+
+        <UCard class="text-center hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-center gap-2 text-warning-600 dark:text-warning-400">
+            <UIcon name="i-lucide-clock" class="size-6" />
+          </div>
+          <div class="text-2xl font-bold mt-2">{{ stats.pendingProducts }}</div>
+          <div class="text-sm text-dimmed">در انتظار تایید</div>
+        </UCard>
+
+        <UCard class="text-center hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-center gap-2 text-success-600 dark:text-success-400">
+            <UIcon name="i-lucide-trending-up" class="size-6" />
+          </div>
+          <div class="text-2xl font-bold mt-2">{{ stats.totalRevenue.toLocaleString() }} تومان</div>
+          <div class="text-sm text-dimmed">درآمد کل</div>
+        </UCard>
+      </div>
+
+      <!-- Pending Products Alert -->
+      <UAlert
+        v-if="stats.pendingProducts > 0"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-alert-triangle"
+        :title="`${stats.pendingProducts} محصول در انتظار تایید مرکز رشد هستند`"
+      >
+        <template #description>
+          <span class="text-sm">
+            پس از تایید توسط مرکز رشد، محصولات شما قابل مشاهده خواهند بود.
+          </span>
+        </template>
+      </UAlert>
+
+      <!-- Recent Activity -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Recent Products -->
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h3 class="font-semibold">محصولات جدید</h3>
+              <NuxtLink to="/company/products" class="text-sm text-primary-600 hover:underline">
+                مشاهده همه
+              </NuxtLink>
+            </div>
+          </template>
+          <div v-if="loading" class="flex justify-center py-4">
+            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+          </div>
+          <div v-else-if="recentProducts.length === 0" class="text-center text-dimmed py-4">
+            محصولی یافت نشد
+          </div>
+          <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-for="product in recentProducts" :key="product.id" class="py-2 flex justify-between items-center">
+              <div>
+                <div class="font-medium text-sm">{{ product.title }}</div>
+                <div class="text-xs text-dimmed">{{ product.sku }}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-semibold text-primary-600">{{ formatPrice(product.finalPrice) }}</span>
+                <UBadge
+                  :color="product.approvalStatus === 1 ? 'success' : product.approvalStatus === 2 ? 'error' : 'warning'"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ product.approvalStatusTitle }}
+                </UBadge>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <!-- Pending Products -->
+        <UCard>
+          <template #header>
+            <div class="flex justify-between items-center">
+              <h3 class="font-semibold">محصولات در انتظار تایید</h3>
+              <NuxtLink to="/company/products" class="text-sm text-primary-600 hover:underline">
+                مشاهده همه
+              </NuxtLink>
+            </div>
+          </template>
+          <div v-if="loading" class="flex justify-center py-4">
+            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+          </div>
+          <div v-else-if="pendingProductsList.length === 0" class="text-center text-dimmed py-4">
+            هیچ محصول در انتظار تاییدی وجود ندارد
+          </div>
+          <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+            <div v-for="product in pendingProductsList" :key="product.id" class="py-2 flex justify-between items-center">
+              <div>
+                <div class="font-medium text-sm">{{ product.title }}</div>
+                <div class="text-xs text-dimmed">{{ product.createdAtPersian }}</div>
+              </div>
+              <UBadge color="warning" variant="subtle" size="sm">در انتظار تایید</UBadge>
+            </div>
+          </div>
+        </UCard>
+      </div>
+
+      <!-- Recent Orders -->
+      <UCard>
+        <template #header>
+          <div class="flex justify-between items-center">
+            <h3 class="font-semibold">سفارشات اخیر</h3>
+            <NuxtLink to="/company/orders" class="text-sm text-primary-600 hover:underline">
+              مشاهده همه
+            </NuxtLink>
+          </div>
+        </template>
+        <div v-if="loading" class="flex justify-center py-4">
+          <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
+        </div>
+        <div v-else-if="recentOrders.length === 0" class="text-center text-dimmed py-4">
+          سفارشی یافت نشد
+        </div>
+        <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+          <div v-for="order in recentOrders" :key="order.id" class="py-2 flex justify-between items-center">
+            <div>
+              <div class="font-medium text-sm">#{{ order.orderNumber }}</div>
+              <div class="text-xs text-dimmed">{{ order.orderDate }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold">{{ order.totalAmount.toLocaleString() }} تومان</span>
+              <UBadge
+                :color="
+                  order.status === 1 ? 'warning' :
+                  order.status === 2 ? 'success' :
+                  order.status === 3 ? 'info' :
+                  order.status === 4 ? 'primary' :
+                  'error'
+                "
+                variant="subtle"
+                size="sm"
+              >
+                {{ order.statusTitle }}
+              </UBadge>
+            </div>
+          </div>
+        </div>
+      </UCard>
+
+      <!-- Quick Actions -->
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold">دسترسی سریع</h3>
+        </template>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <NuxtLink to="/company/products" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <UIcon name="i-lucide-box" class="size-8 text-primary-600 mx-auto" />
+            <div class="text-sm mt-2">مدیریت محصولات</div>
+          </NuxtLink>
+          <NuxtLink to="/company/product-files" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <UIcon name="i-lucide-files" class="size-8 text-primary-600 mx-auto" />
+            <div class="text-sm mt-2">مدیریت مدارک</div>
+          </NuxtLink>
+          <NuxtLink to="/company/orders" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <UIcon name="i-lucide-shopping-cart" class="size-8 text-primary-600 mx-auto" />
+            <div class="text-sm mt-2">مشاهده سفارشات</div>
+          </NuxtLink>
+        </div>
+      </UCard>
+    </div>
+  </ClientOnly>
+</template>
