@@ -1,4 +1,4 @@
-// app/middleware/admin.ts
+// app/middleware/growth-center.ts
 import { useAuthStore } from '~/stores/auth'
 
 export default defineNuxtRouteMiddleware(() => {
@@ -13,15 +13,18 @@ export default defineNuxtRouteMiddleware(() => {
   // بررسی نقش کاربر
   const role = auth.user?.role
 
-  // نقش‌های مجاز برای پنل مدیریت
-  const allowedRoles = ['Admin', 'Operator']
+  // نقش‌های مجاز برای پنل مرکز رشد
+  const allowedRoles = ['GrowthCenterUser', 'Admin', 'Operator']
 
   if (!role || !allowedRoles.includes(role)) {
     toast.add({
       title: 'دسترسی غیرمجاز',
-      description: 'شما دسترسی به پنل مدیریت ندارید.',
+      description: 'شما دسترسی به پنل مرکز رشد ندارید.',
       color: 'error'
     })
     return navigateTo('/')
   }
+
+  // بررسی وجود مرکز رشد برای کاربر
+  // در آینده می‌توانیم بررسی کنیم که کاربر به یک مرکز رشد متصل است یا خیر
 })
