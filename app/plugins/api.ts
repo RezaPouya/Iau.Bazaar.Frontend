@@ -20,7 +20,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   const api = axios.create({
     baseURL: config.public.apiBase,
-    timeout: 30000,
+    timeout: 1200000,
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'

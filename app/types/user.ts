@@ -1,19 +1,25 @@
-// app/types/user.ts
+// types/user.ts
 export interface User {
-  userId: number
-  fullName: string
+  id: number // Changed from userId
   userName: string
+  firstName: string
+  lastName: string
+  fullName: string
   phoneNumber: string
-  email?: string
-  nationalCode?: string
-  role: string
+  email: string
+  nationalCode: string
   isActive: boolean
+  isLockedOut: boolean
+  lockoutEnd: string | null
+  role: string
+  universityId: number | null
+  growthCenterId: number | null
+  companyId: number | null
   createdAt: string
+  // Add these if they exist
   createdAtPersian?: string
-  lastLoginAt?: string
   lastLoginAtPersian?: string
 }
-
 export interface CreateUserInput {
   fullName: string
   userName: string

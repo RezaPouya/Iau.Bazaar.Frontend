@@ -17,23 +17,40 @@ const userService = useAdminUserService()
 
 // Columns
 const columns = [
-  { key: 'userId', label: 'شناسه', sortable: true },
+  { key: 'id', label: 'شناسه', sortable: true },
   { key: 'fullName', label: 'نام کامل', sortable: true },
   { key: 'userName', label: 'نام کاربری', sortable: true },
   { key: 'phoneNumber', label: 'شماره تماس', sortable: true },
   { key: 'role', label: 'نقش', sortable: true },
   { key: 'isActive', label: 'فعال', sortable: true },
-  { key: 'createdAtPersian', label: 'تاریخ ثبت‌نام', sortable: true },
-  { key: 'lastLoginAtPersian', label: 'آخرین ورود', sortable: true },
+  { key: 'createdAt', label: 'تاریخ ثبت‌نام', sortable: true },
+  { key: 'lockoutEnd', label: 'آخرین ورود', sortable: true },
   { key: 'actions', label: 'عملیات', sortable: false }
 ]
+
+// Format Persian date
+const formatPersianDate = (dateString: string | null) => {
+  if (!dateString) return '—'
+  try {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  } catch {
+    return '—'
+  }
+}
 
 // Roles
 const roles = ref<{ id: string; name: string; nameFa: string }[]>([])
 const fetchRoles = async () => {
   try {
     const response = await $api.get('panel/admin/users/roles')
-    console.log(response)
+    console.log('Roles response:', response)
     roles.value = response.data.data || response.data || []
   } catch (error) {
     console.error('خطا در دریافت نقش‌ها', error)
@@ -94,7 +111,7 @@ const loadData = async () => {
       filters.push({
         propertyName: 'isActive',
         operation: GridFilterOperation.Equals,
-        value: filterIsActive.value
+        value: filterIsActive.value === 'true'
       })
     }
 
@@ -113,13 +130,56 @@ const loadData = async () => {
       }
     }
 
+    console.log('Request payload:', request)
+
+    // Try direct API call first to see if it works
+    try {
+      const directResponse = await $api.post('panel/admin/users/list', request)
+      console.log('Direct API response:', directResponse)
+      console.log('Direct API data:', directResponse.data)
+
+      // If direct call works, use that data
+      if (directResponse.data && directResponse.data.data) {
+        const responseData = directResponse.data.data
+        data.value = responseData.data || responseData || []
+        totals.value = responseData.totals || responseData.total || 0
+        currentPage.value = responseData.page || 1
+        pageSize.value = responseData.pageSize || 10
+        console.log('Data loaded successfully:', data.value)
+        return
+      }
+    } catch (directError) {
+      console.error('Direct API call failed, trying service:', directError)
+    }
+
+    // Fallback to service call
     const result = await userService.getUsersList(request)
-    data.value = result.data ?? []
-    totals.value = result.totals ?? 0
-    currentPage.value = result.page ?? 1
-    pageSize.value = result.pageSize ?? 10
+    console.log('Service response:', result)
+
+    // Handle different response structures
+    if (result && result.data) {
+      data.value = result.data
+      totals.value = result.totals || result.total || 0
+      currentPage.value = result.page || 1
+      pageSize.value = result.pageSize || 10
+    } else if (Array.isArray(result)) {
+      data.value = result
+      totals.value = result.length
+    } else {
+      data.value = result || []
+      totals.value = 0
+    }
+
+    console.log('Final data:', data.value)
+    console.log('Total records:', totals.value)
+
   } catch (err: any) {
-    console.error('خطا:', err)
+    console.error('Error loading data:', err)
+    toast.add({
+      title: 'خطا در بارگذاری داده‌ها',
+      description: err.message || 'لطفاً دوباره تلاش کنید',
+      color: 'error'
+    })
     data.value = []
     totals.value = 0
   } finally {
@@ -198,7 +258,7 @@ const openEditModal = (user: any) => {
 
 const openPasswordModal = (user: any) => {
   selectedUserForPassword.value = {
-    userId: user.userId,
+    userId: user.id,
     fullName: user.fullName
   }
   passwordModalOpen.value = true
@@ -207,9 +267,9 @@ const openPasswordModal = (user: any) => {
 // Save user
 const handleSave = async (formData: any) => {
   try {
-    if (formData.userId) {
-      const { userId, ...updateData } = formData
-      await userService.updateUser(userId, updateData)
+    if (formData.id) {
+      const { id, ...updateData } = formData
+      await userService.updateUser(id, updateData)
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
       await userService.createUser(formData)
@@ -218,7 +278,11 @@ const handleSave = async (formData: any) => {
     formModalOpen.value = false
     loadData()
   } catch (error: any) {
-    toast.add({ title: error.response?.data?.message || 'خطا در ذخیره', color: 'error' })
+    toast.add({
+      title: 'خطا در ذخیره',
+      description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
+      color: 'error'
+    })
   }
 }
 
@@ -232,7 +296,11 @@ const handleResetPassword = async (password: string) => {
     passwordModalOpen.value = false
     selectedUserForPassword.value = null
   } catch (error: any) {
-    toast.add({ title: error.response?.data?.message || 'خطا در تغییر رمز عبور', color: 'error' })
+    toast.add({
+      title: 'خطا در تغییر رمز عبور',
+      description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
+      color: 'error'
+    })
   }
 }
 
@@ -243,7 +311,11 @@ const deleteUser = async (userId: number) => {
     toast.add({ title: 'حذف موفق', color: 'success' })
     loadData()
   } catch (error: any) {
-    toast.add({ title: error.response?.data?.message || 'خطا در حذف', color: 'error' })
+    toast.add({
+      title: 'خطا در حذف',
+      description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
+      color: 'error'
+    })
   }
 }
 
@@ -254,7 +326,11 @@ const toggleActive = async (userId: number) => {
     toast.add({ title: 'وضعیت با موفقیت تغییر کرد', color: 'success' })
     loadData()
   } catch (error: any) {
-    toast.add({ title: error.response?.data?.message || 'خطا در تغییر وضعیت', color: 'error' })
+    toast.add({
+      title: 'خطا در تغییر وضعیت',
+      description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
+      color: 'error'
+    })
   }
 }
 
@@ -276,7 +352,7 @@ const getRoleColor = (role: string) => {
   const roleColors: Record<string, string> = {
     Admin: 'error',
     Operator: 'warning',
-    User: 'info',
+    Customer: 'info',
     CompanyAdmin: 'primary'
   }
   return roleColors[role] || 'neutral'
@@ -286,42 +362,75 @@ const getRoleName = (role: string) => {
   const roleNames: Record<string, string> = {
     Admin: 'مدیر',
     Operator: 'اپراتور',
-    User: 'کاربر عادی',
+    Customer: 'کاربر عادی',
     CompanyAdmin: 'مدیر شرکت'
   }
   return roleNames[role] || role
 }
 
+// Debug: Check if data is loading
+watch(data, (newVal) => {
+  console.log('Data changed:', newVal)
+})
+
+watch(totals, (newVal) => {
+  console.log('Total changed:', newVal)
+})
+
 onMounted(async () => {
   await fetchRoles()
-  loadData()
+  // Small delay to ensure everything is ready
+  setTimeout(() => {
+    loadData()
+  }, 100)
 })
 </script>
 
 <template>
   <ClientOnly>
     <div class="compact-grid">
-      <div class="mb-3 flex justify-between items-center">
+      <div class="mb-3 flex flex-wrap justify-between items-center gap-2">
         <h1 class="text-xl font-bold">مدیریت کاربران</h1>
-        <UButton color="primary" size="sm" @click="openCreateModal"> افزودن کاربر </UButton>
+        <UButton color="primary" size="sm" @click="openCreateModal">
+          <UIcon name="i-lucide-plus" class="size-4" />
+          افزودن کاربر
+        </UButton>
       </div>
 
       <!-- Filters -->
       <UCard class="mb-3 p-3">
         <div class="flex flex-wrap gap-2 items-end">
           <UFormField label="نام کامل" class="flex-1 min-w-[150px]">
-            <UInput v-model="filterFullName" placeholder="جستجو..." class="w-full text-right" />
+            <UInput
+              v-model="filterFullName"
+              placeholder="جستجو..."
+              class="w-full text-right"
+              @keyup.enter="applyFilters"
+            />
           </UFormField>
           <UFormField label="نام کاربری" class="w-40">
-            <UInput v-model="filterUserName" placeholder="نام کاربری..." class="w-full text-right" />
+            <UInput
+              v-model="filterUserName"
+              placeholder="نام کاربری..."
+              class="w-full text-right"
+              @keyup.enter="applyFilters"
+            />
           </UFormField>
           <UFormField label="شماره تماس" class="w-36">
-            <UInput v-model="filterPhoneNumber" placeholder="شماره تماس..." class="w-full text-left" />
+            <UInput
+              v-model="filterPhoneNumber"
+              placeholder="شماره تماس..."
+              class="w-full text-left"
+              @keyup.enter="applyFilters"
+            />
           </UFormField>
           <UFormField label="نقش کاربری" class="w-32">
             <USelect
               v-model="filterRole"
-              :items="[{ label: 'همه نقش‌ها', value: null }, ...roles.map((r) => ({ label: r.nameFa || r.name, value: r.id }))]"
+              :items="[
+                { label: 'همه نقش‌ها', value: null },
+                ...roles.map((r) => ({ label: r.nameFa || r.name, value: r.id }))
+              ]"
               class="w-full"
               :popper="{ placement: 'bottom-end' }"
             />
@@ -345,117 +454,161 @@ onMounted(async () => {
         </div>
       </UCard>
 
+      <!-- Debug Info -->
+      <div v-if="!loading" class="mb-2 text-xs text-gray-500">
+        تعداد کل: {{ totals }} - تعداد رکوردها: {{ data.length }}
+      </div>
+
       <!-- Loading -->
-      <UCard v-if="loading" class="flex justify-center py-4">
-        <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin mx-auto" />
+      <UCard v-if="loading" class="flex justify-center py-8">
+        <div class="flex flex-col items-center gap-2">
+          <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
+          <span class="text-sm text-gray-500">در حال بارگذاری...</span>
+        </div>
       </UCard>
 
       <!-- Table -->
       <div v-else>
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th
-                  v-for="col in columns"
-                  :key="col.key"
-                  class="px-3 py-1.5 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                  @click="col.sortable && setSort(col.key)"
-                >
-                  <div class="flex items-center justify-center gap-1">
-                    {{ col.label }}
-                    <UIcon v-if="col.sortable" :name="getSortIcon(col.key)" class="size-3.5" />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in data" :key="item.userId" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td class="px-3 py-1.5 text-center">{{ item.userId }}</td>
-                <td class="px-3 py-1.5 text-right">{{ item.fullName }}</td>
-                <td class="px-3 py-1.5 text-center">{{ item.userName }}</td>
-                <td class="px-3 py-1.5 text-left">{{ item.phoneNumber }}</td>
-                <td class="px-3 py-1.5 text-center">
-                  <UBadge :color="getRoleColor(item.role)" variant="subtle" size="sm">
-                    {{ getRoleName(item.role) }}
-                  </UBadge>
-                </td>
-                <td class="px-3 py-1.5 text-center">
-                  <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle" size="sm">
-                    {{ item.isActive ? 'فعال' : 'غیرفعال' }}
-                  </UBadge>
-                </td>
-                <td class="px-3 py-1.5 text-center">{{ item.createdAtPersian }}</td>
-                <td class="px-3 py-1.5 text-center">{{ item.lastLoginAtPersian || '—' }}</td>
-                <td class="px-3 py-1.5 text-center">
-                  <UDropdownMenu
-                    :items="[
-                      [
-                        {
-                          label: 'ویرایش',
-                          icon: 'i-lucide-edit',
-                          onSelect: () => openEditModal(item)
-                        },
-                        {
-                          label: 'تغییر رمز عبور',
-                          icon: 'i-lucide-key',
-                          onSelect: () => openPasswordModal(item)
-                        },
-                        {
-                          label: 'تغییر وضعیت',
-                          icon: item.isActive ? 'i-lucide-toggle-left' : 'i-lucide-toggle-right',
-                          onSelect: () => toggleActive(item.userId)
-                        },
-                        {
-                          label: 'حذف',
-                          icon: 'i-lucide-trash',
-                          color: 'error',
-                          onSelect: () => confirmDelete(item.userId, item.fullName)
-                        }
-                      ]
-                    ]"
-                    :content="{ align: 'end' }"
+        <UCard class="overflow-hidden p-0">
+          <div class="overflow-x-auto">
+            <table class="min-w-full bg-white dark:bg-gray-900 text-sm">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th
+                    v-for="col in columns"
+                    :key="col.key"
+                    class="px-3 py-2 text-center border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    @click="col.sortable && setSort(col.key)"
                   >
-                    <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-more-vertical" />
-                  </UDropdownMenu>
-                </td>
-              </tr>
-              <tr v-if="data.length === 0">
-                <td :colspan="columns.length" class="px-3 py-4 text-center text-gray-500">هیچ کاربری یافت نشد</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
-          <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
-          <div class="flex gap-1 items-center">
-            <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
-            <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
-            <UButton
-              icon="i-lucide-chevron-left"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage >= totalPages"
-              @click="setPage(currentPage + 1)"
-            />
-            <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
+                    <div class="flex items-center justify-center gap-1 whitespace-nowrap">
+                      {{ col.label }}
+                      <UIcon
+                        v-if="col.sortable"
+                        :name="getSortIcon(col.key)"
+                        class="size-3.5 flex-shrink-0"
+                      />
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in data"
+                  :key="item.id"
+                  class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <td class="px-3 py-2 text-center">{{ item.id }}</td>
+                  <td class="px-3 py-2 text-right">{{ item.fullName }}</td>
+                  <td class="px-3 py-2 text-center">{{ item.userName }}</td>
+                  <td class="px-3 py-2 text-left dir-ltr">{{ item.phoneNumber }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <UBadge :color="getRoleColor(item.role)" variant="subtle" size="sm">
+                      {{ getRoleName(item.role) }}
+                    </UBadge>
+                  </td>
+                  <td class="px-3 py-2 text-center">
+                    <UBadge :color="item.isActive ? 'success' : 'error'" variant="subtle" size="sm">
+                      {{ item.isActive ? 'فعال' : 'غیرفعال' }}
+                    </UBadge>
+                  </td>
+                  <td class="px-3 py-2 text-center">{{ formatPersianDate(item.createdAt) }}</td>
+                  <td class="px-3 py-2 text-center">{{ item.lockoutEnd ? formatPersianDate(item.lockoutEnd) : '—' }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <UDropdownMenu
+                      :items="[
+                        [
+                          {
+                            label: 'ویرایش',
+                            icon: 'i-lucide-edit',
+                            onSelect: () => openEditModal(item)
+                          },
+                          {
+                            label: 'تغییر رمز عبور',
+                            icon: 'i-lucide-key',
+                            onSelect: () => openPasswordModal(item)
+                          },
+                          {
+                            label: item.isActive ? 'غیرفعال کردن' : 'فعال کردن',
+                            icon: item.isActive ? 'i-lucide-toggle-left' : 'i-lucide-toggle-right',
+                            onSelect: () => toggleActive(item.id)
+                          },
+                          {
+                            label: 'حذف',
+                            icon: 'i-lucide-trash',
+                            color: 'error',
+                            onSelect: () => confirmDelete(item.id, item.fullName)
+                          }
+                        ]
+                      ]"
+                      :content="{ align: 'end' }"
+                    >
+                      <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-more-vertical" />
+                    </UDropdownMenu>
+                  </td>
+                </tr>
+                <tr v-if="data.length === 0">
+                  <td :colspan="columns.length" class="px-3 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center gap-2">
+                      <UIcon name="i-lucide-users" class="size-8 text-gray-300" />
+                      <span>هیچ کاربری یافت نشد</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 0" class="flex flex-wrap justify-between items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="text-sm text-gray-500">
+              نمایش {{ startIndex }} - {{ endIndex }} از {{ totals }} کاربر
+            </div>
+            <div class="flex gap-1 items-center">
+              <UButton
+                icon="i-lucide-chevron-right"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                :disabled="currentPage <= 1"
+                @click="setPage(currentPage - 1)"
+              />
+              <span class="text-sm mx-1 whitespace-nowrap">
+                صفحه {{ currentPage }} از {{ totalPages }}
+              </span>
+              <UButton
+                icon="i-lucide-chevron-left"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                :disabled="currentPage >= totalPages"
+                @click="setPage(currentPage + 1)"
+              />
+              <USelect
+                v-model="pageSize"
+                :items="[10, 20, 50, 100]"
+                size="sm"
+                class="w-20"
+                @update:model-value="setPageSize"
+              />
+            </div>
+          </div>
+        </UCard>
       </div>
 
       <!-- Modals -->
       <UserFormModal
         v-model:open="formModalOpen"
-        :editing-id="editingUser?.userId || null"
+        :editing-id="editingUser?.id || null"
         :initial-data="editingUser || undefined"
         :roles="roles"
         @save="handleSave"
       />
 
-      <UserPasswordModal v-model:open="passwordModalOpen" :user-name="selectedUserForPassword?.fullName || ''" @save="handleResetPassword" />
+      <UserPasswordModal
+        v-model:open="passwordModalOpen"
+        :user-name="selectedUserForPassword?.fullName || ''"
+        @save="handleResetPassword"
+      />
     </div>
   </ClientOnly>
 </template>
@@ -478,6 +631,10 @@ onMounted(async () => {
   text-align: right;
 }
 
+.dir-ltr {
+  direction: ltr !important;
+}
+
 table {
   min-height: 100px !important;
 }
@@ -485,5 +642,20 @@ table {
 tr,
 tbody {
   vertical-align: top !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .compact-grid :deep(.p-4) {
+    padding: 0.5rem !important;
+  }
+
+  .compact-grid :deep(.gap-3) {
+    gap: 0.25rem !important;
+  }
+
+  .compact-grid :deep(.flex-wrap) {
+    gap: 0.5rem !important;
+  }
 }
 </style>
