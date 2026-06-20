@@ -36,7 +36,7 @@ export interface UpdateUserInput extends Partial<CreateUserInput> {
 }
 
 export interface UserRole {
-  id: string
+  id: number
   name: string
   nameFa: string
 }

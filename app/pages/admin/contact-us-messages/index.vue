@@ -1,10 +1,9 @@
-<!-- app/pages/admin/messages/index.vue -->
 <script setup lang="ts">
 import { GridFilterOperation } from '~/types/grid'
-import { useAdminMessageService } from '~/services/admin/message.service'
-import type { Message, MessageStatus, MessagePriority, MessageCategory } from '~/types/message'
-import { MessageStatusConfig, MessagePriorityConfig, MessageCategoryConfig } from '~/types/message'
-import MessageViewModal from '~/components/admin/message/MessageViewModal.vue'
+import { useAdminContactUsMessageService } from '~/services/admin/contact-us-message.service'
+import type { ContactUsMessageDto, ContactUsMessageStatus, ContactUsMessagePriority, ContactUsMessageCategory } from '~/types/contact-us-message'
+import { ContactUsMessageStatusConfig, ContactUsMessagePriorityConfig, ContactUsMessageCategoryConfig } from '~/types/contact-us-message'
+import ContactUsMessageViewModal from '~/components/admin/contact-us-message/ContactUsMessageViewModal.vue'
 
 definePageMeta({
   layout: 'admin',
@@ -13,7 +12,7 @@ definePageMeta({
 })
 
 const toast = useToast()
-const messageService = useAdminMessageService()
+const messageService = useAdminContactUsMessageService()
 
 // Stats
 const stats = ref({
@@ -44,14 +43,14 @@ const columns = [
 const filterFullName = ref('')
 const filterEmail = ref('')
 const filterSubject = ref('')
-const filterStatus = ref<string | null>(null)
-const filterPriority = ref<string | null>(null)
-const filterCategory = ref<string | null>(null)
+const filterStatus = ref<ContactUsMessageStatus | null>(null)
+const filterPriority = ref<ContactUsMessagePriority | null>(null)
+const filterCategory = ref<ContactUsMessageCategory | null>(null)
 const dateFrom = ref<string>('')
 const dateTo = ref<string>('')
 
 // Grid state
-const data = ref<Message[]>([])
+const data = ref<ContactUsMessageDto[]>([])
 const totals = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -59,20 +58,21 @@ const loading = ref(false)
 const sortKey = ref<string | null>(null)
 const sortDirection = ref<'asc' | 'desc' | null>(null)
 
-// Selection for bulk actions
+// Selection
 const selectedRows = ref<Set<number>>(new Set())
 const selectAll = ref(false)
 
-// Modal state
+// Modal
 const viewModalOpen = ref(false)
-const selectedMessage = ref<Message | null>(null)
+const selectedMessage = ref<ContactUsMessageDto | null>(null)
 
-// Load stats
+// Load stats (mock)
 const loadStats = async () => {
   try {
-    stats.value = await messageService.getMessageStats()
-  } catch (error) {
-    console.error('Error loading stats:', error)
+    const response = await $fetch('/api/admin/contact-us/stats') // فرضی
+    stats.value = response
+  } catch {
+    // fallback
   }
 }
 
@@ -81,62 +81,29 @@ const loadData = async () => {
   loading.value = true
   try {
     const filters: any[] = []
-
     if (filterFullName.value.trim()) {
-      filters.push({
-        propertyName: 'fullName',
-        operation: GridFilterOperation.Contains,
-        value: filterFullName.value.trim()
-      })
+      filters.push({ propertyName: 'fullName', operation: GridFilterOperation.Contains, value: filterFullName.value.trim() })
     }
     if (filterEmail.value.trim()) {
-      filters.push({
-        propertyName: 'email',
-        operation: GridFilterOperation.Contains,
-        value: filterEmail.value.trim()
-      })
+      filters.push({ propertyName: 'email', operation: GridFilterOperation.Contains, value: filterEmail.value.trim() })
     }
     if (filterSubject.value.trim()) {
-      filters.push({
-        propertyName: 'subject',
-        operation: GridFilterOperation.Contains,
-        value: filterSubject.value.trim()
-      })
+      filters.push({ propertyName: 'subject', operation: GridFilterOperation.Contains, value: filterSubject.value.trim() })
     }
     if (filterStatus.value) {
-      filters.push({
-        propertyName: 'status',
-        operation: GridFilterOperation.Equals,
-        value: filterStatus.value
-      })
+      filters.push({ propertyName: 'status', operation: GridFilterOperation.Equals, value: filterStatus.value })
     }
     if (filterPriority.value) {
-      filters.push({
-        propertyName: 'priority',
-        operation: GridFilterOperation.Equals,
-        value: filterPriority.value
-      })
+      filters.push({ propertyName: 'priority', operation: GridFilterOperation.Equals, value: filterPriority.value })
     }
     if (filterCategory.value) {
-      filters.push({
-        propertyName: 'category',
-        operation: GridFilterOperation.Equals,
-        value: filterCategory.value
-      })
+      filters.push({ propertyName: 'category', operation: GridFilterOperation.Equals, value: filterCategory.value })
     }
     if (dateFrom.value) {
-      filters.push({
-        propertyName: 'createdAt',
-        operation: GridFilterOperation.GreaterThanOrEqual,
-        value: dateFrom.value
-      })
+      filters.push({ propertyName: 'createdAt', operation: GridFilterOperation.GreaterThanOrEqual, value: dateFrom.value })
     }
     if (dateTo.value) {
-      filters.push({
-        propertyName: 'createdAt',
-        operation: GridFilterOperation.LessThanOrEqual,
-        value: dateTo.value
-      })
+      filters.push({ propertyName: 'createdAt', operation: GridFilterOperation.LessThanOrEqual, value: dateTo.value })
     }
 
     const request = {
@@ -144,13 +111,9 @@ const loadData = async () => {
       pageSize: pageSize.value,
       inputParams: {
         filters,
-        sort:
-          sortKey.value && sortDirection.value
-            ? {
-                propertyName: sortKey.value,
-                ascending: sortDirection.value === 'asc'
-              }
-            : null
+        sort: sortKey.value && sortDirection.value
+          ? { propertyName: sortKey.value, ascending: sortDirection.value === 'asc' }
+          : null
       }
     }
 
@@ -159,8 +122,6 @@ const loadData = async () => {
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1
     pageSize.value = result.pageSize ?? 10
-
-    // Clear selection on new data load
     selectedRows.value.clear()
     selectAll.value = false
   } catch (err: any) {
@@ -230,7 +191,7 @@ const clearFilters = () => {
   loadStats()
 }
 
-// Selection handlers
+// Selection
 const toggleSelectRow = (id: number) => {
   if (selectedRows.value.has(id)) {
     selectedRows.value.delete(id)
@@ -253,7 +214,6 @@ const toggleSelectAll = () => {
 // Bulk actions
 const bulkDelete = async () => {
   if (selectedRows.value.size === 0) return
-
   toast.add({
     title: 'تأیید حذف گروهی',
     description: `آیا از حذف ${selectedRows.value.size} پیام اطمینان دارید؟`,
@@ -263,7 +223,7 @@ const bulkDelete = async () => {
         label: 'بله',
         onClick: async () => {
           try {
-            await messageService.bulkDeleteMessages(Array.from(selectedRows.value))
+            await Promise.all(Array.from(selectedRows.value).map(id => messageService.deleteMessage(id)))
             toast.add({ title: 'پیام‌ها با موفقیت حذف شدند', color: 'success' })
             selectedRows.value.clear()
             selectAll.value = false
@@ -279,11 +239,10 @@ const bulkDelete = async () => {
   })
 }
 
-const bulkUpdateStatus = async (status: MessageStatus) => {
+const bulkUpdateStatus = async (status: ContactUsMessageStatus) => {
   if (selectedRows.value.size === 0) return
-
   try {
-    await messageService.bulkUpdateStatus(Array.from(selectedRows.value), status)
+    await Promise.all(Array.from(selectedRows.value).map(id => messageService.updateMessage(id, { status })))
     toast.add({ title: `وضعیت ${selectedRows.value.size} پیام با موفقیت تغییر کرد`, color: 'success' })
     selectedRows.value.clear()
     selectAll.value = false
@@ -294,8 +253,8 @@ const bulkUpdateStatus = async (status: MessageStatus) => {
   }
 }
 
-// Single message actions
-const viewMessage = async (message: Message) => {
+// Single actions
+const viewMessage = (message: ContactUsMessageDto) => {
   selectedMessage.value = message
   viewModalOpen.value = true
 }
@@ -324,17 +283,6 @@ const deleteMessage = async (id: number) => {
   })
 }
 
-const updateStatus = async (id: number, status: MessageStatus) => {
-  try {
-    await messageService.updateMessageStatus({ messageId: id, status })
-    toast.add({ title: 'وضعیت با موفقیت تغییر کرد', color: 'success' })
-    loadData()
-    loadStats()
-  } catch (error: any) {
-    toast.add({ title: error.response?.data?.message || 'خطا در تغییر وضعیت', color: 'error' })
-  }
-}
-
 // Export
 const exportMessages = async () => {
   try {
@@ -345,8 +293,7 @@ const exportMessages = async () => {
     if (filterStatus.value) {
       filters.push({ propertyName: 'status', operation: GridFilterOperation.Equals, value: filterStatus.value })
     }
-
-    const blob = await messageService.exportMessages({ filters })
+    const blob = await $fetch('/api/admin/contact-us/export', { method: 'POST', body: { filters } }) as Blob
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -355,30 +302,29 @@ const exportMessages = async () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-
     toast.add({ title: 'خروجی با موفقیت ایجاد شد', color: 'success' })
   } catch (error: any) {
     toast.add({ title: error.response?.data?.message || 'خطا در ایجاد خروجی', color: 'error' })
   }
 }
 
-// Status badge
-const getStatusBadge = (status: MessageStatus) => {
-  const config = MessageStatusConfig[status]
-  return { color: config.color, label: config.label, icon: config.icon }
+// Badge helpers
+const getStatusBadge = (status: ContactUsMessageStatus) => {
+  const config = ContactUsMessageStatusConfig[status]
+  return config || { color: 'neutral', label: status, icon: 'i-lucide-circle' }
 }
 
-const getPriorityBadge = (priority: MessagePriority) => {
-  const config = MessagePriorityConfig[priority]
-  return { color: config.color, label: config.label, icon: config.icon }
+const getPriorityBadge = (priority: ContactUsMessagePriority) => {
+  const config = ContactUsMessagePriorityConfig[priority]
+  return config || { color: 'neutral', label: priority, icon: 'i-lucide-circle' }
 }
 
-const getCategoryBadge = (category: MessageCategory) => {
-  const config = MessageCategoryConfig[category]
-  return { label: config.label, icon: config.icon }
+const getCategoryBadge = (category: ContactUsMessageCategory) => {
+  const config = ContactUsMessageCategoryConfig[category]
+  return config || { label: category, icon: 'i-lucide-circle' }
 }
 
-// Status options for select
+// Options
 const statusOptions = [
   { label: 'همه', value: null },
   { label: 'در انتظار', value: 'pending' },
@@ -421,6 +367,7 @@ onMounted(() => {
 <template>
   <ClientOnly>
     <div class="compact-grid">
+      <!-- header -->
       <div class="mb-3 flex justify-between items-center">
         <h1 class="text-xl font-bold">مدیریت پیام‌ها</h1>
         <UButton color="neutral" variant="outline" size="sm" @click="exportMessages">
@@ -429,7 +376,7 @@ onMounted(() => {
         </UButton>
       </div>
 
-      <!-- Statistics Cards -->
+      <!-- stats -->
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
         <UCard class="p-2 text-center">
           <div class="text-2xl font-bold text-primary-600">{{ stats.total }}</div>
@@ -465,28 +412,18 @@ onMounted(() => {
         </UCard>
       </div>
 
-      <!-- Bulk Actions Bar -->
+      <!-- bulk actions -->
       <div v-if="selectedRows.size > 0" class="mb-3 p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex flex-wrap items-center justify-between gap-2">
-        <div class="text-sm">
-          <span class="font-semibold">{{ selectedRows.size }}</span> پیام انتخاب شده
-        </div>
+        <div class="text-sm"><span class="font-semibold">{{ selectedRows.size }}</span> پیام انتخاب شده</div>
         <div class="flex gap-2">
-          <UDropdownMenu
-            :items="[
-              bulkStatusOptions.map((opt) => ({
-                label: opt.label,
-                icon: opt.icon,
-                onSelect: () => bulkUpdateStatus(opt.value as MessageStatus)
-              }))
-            ]"
-          >
+          <UDropdownMenu :items="[bulkStatusOptions.map((opt) => ({ label: opt.label, icon: opt.icon, onSelect: () => bulkUpdateStatus(opt.value as ContactUsMessageStatus) }))]">
             <UButton size="sm" color="neutral" variant="outline"> تغییر وضعیت گروهی </UButton>
           </UDropdownMenu>
           <UButton size="sm" color="error" variant="outline" @click="bulkDelete"> حذف گروهی </UButton>
         </div>
       </div>
 
-      <!-- Filters -->
+      <!-- filters -->
       <UCard class="mb-3 p-3">
         <div class="flex flex-wrap gap-2 items-end">
           <UFormField label="نام فرستنده" class="flex-1 min-w-[120px]">
@@ -520,12 +457,12 @@ onMounted(() => {
         </div>
       </UCard>
 
-      <!-- Loading -->
+      <!-- loading -->
       <UCard v-if="loading" class="flex justify-center py-4">
         <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin mx-auto" />
       </UCard>
 
-      <!-- Table -->
+      <!-- table -->
       <div v-else>
         <div class="overflow-x-auto">
           <table class="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm">
@@ -534,12 +471,7 @@ onMounted(() => {
                 <th class="px-2 py-1.5 text-center border-b w-8">
                   <UCheckbox :model-value="selectAll" @update:model-value="toggleSelectAll" />
                 </th>
-                <th
-                  v-for="col in columns"
-                  :key="col.key"
-                  class="px-3 py-1.5 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                  @click="col.sortable && setSort(col.key)"
-                >
+                <th v-for="col in columns" :key="col.key" class="px-3 py-1.5 text-center border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" @click="col.sortable && setSort(col.key)">
                   <div class="flex items-center justify-center gap-1">
                     {{ col.label }}
                     <UIcon v-if="col.sortable" :name="getSortIcon(col.key)" class="size-3.5" />
@@ -548,25 +480,18 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="item in data"
-                :key="item.id"
-                class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                :class="{ 'bg-primary-50 dark:bg-primary-900/10': !item.isRead }"
-              >
+              <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800" :class="{ 'bg-primary-50 dark:bg-primary-900/10': !item.isSeen }">
                 <td class="px-2 py-1.5 text-center">
                   <UCheckbox :model-value="selectedRows.has(item.id)" @update:model-value="toggleSelectRow(item.id)" />
                 </td>
                 <td class="px-3 py-1.5 text-center">{{ item.id }}</td>
                 <td class="px-3 py-1.5 text-right">
                   <div class="flex items-center gap-2">
-                    <span :class="{ 'font-semibold': !item.isRead }">{{ item.fullName }}</span>
-                    <UBadge v-if="!item.isRead" size="xs" color="primary" variant="subtle">جدید</UBadge>
+                    <span :class="{ 'font-semibold': !item.isSeen }">{{ item.fullName }}</span>
+                    <UBadge v-if="!item.isSeen" size="xs" color="primary" variant="subtle">جدید</UBadge>
                   </div>
                 </td>
-                <td class="px-3 py-1.5 text-right max-w-[200px] truncate" :class="{ 'font-semibold': !item.isRead }">
-                  {{ item.subject }}
-                </td>
+                <td class="px-3 py-1.5 text-right max-w-[200px] truncate" :class="{ 'font-semibold': !item.isSeen }">{{ item.subject }}</td>
                 <td class="px-3 py-1.5 text-center">
                   <UBadge variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
                     <UIcon :name="getCategoryBadge(item.category).icon" class="size-3" />
@@ -604,55 +529,29 @@ onMounted(() => {
           </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- pagination -->
         <div v-if="totalPages > 0" class="flex justify-between items-center mt-3 text-sm">
           <div class="text-gray-500">{{ startIndex }} - {{ endIndex }} از {{ totals }}</div>
           <div class="flex gap-1 items-center">
             <UButton icon="i-lucide-chevron-right" color="neutral" variant="ghost" size="sm" :disabled="currentPage <= 1" @click="setPage(currentPage - 1)" />
             <span class="text-sm mx-1">صفحه {{ currentPage }} از {{ totalPages }}</span>
-            <UButton
-              icon="i-lucide-chevron-left"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              :disabled="currentPage >= totalPages"
-              @click="setPage(currentPage + 1)"
-            />
+            <UButton icon="i-lucide-chevron-left" color="neutral" variant="ghost" size="sm" :disabled="currentPage >= totalPages" @click="setPage(currentPage + 1)" />
             <USelect v-model="pageSize" :items="[10, 20, 50, 100]" size="sm" class="w-20" @update:model-value="setPageSize" />
           </div>
         </div>
       </div>
 
-      <!-- Message View Modal -->
-      <MessageViewModal v-model:open="viewModalOpen" :message="selectedMessage" @reply="loadData" @status-change="loadData" />
+      <!-- modal -->
+      <ContactUsMessageViewModal v-model:open="viewModalOpen" :message="selectedMessage" @message-updated="loadData" @message-deleted="loadData" />
     </div>
   </ClientOnly>
 </template>
 
 <style scoped>
-.compact-grid :deep(.p-4) {
-  padding: 0.75rem !important;
-}
-.compact-grid :deep(.gap-3) {
-  gap: 0.5rem !important;
-}
-
-:deep(input),
-:deep(textarea),
-:deep(.reka-select-trigger) {
-  text-align: left !important;
-}
-
-:deep(.reka-select-value) {
-  text-align: right;
-}
-
-table {
-  min-height: 100px !important;
-}
-
-tr,
-tbody {
-  vertical-align: top !important;
-}
+.compact-grid :deep(.p-4) { padding: 0.75rem !important; }
+.compact-grid :deep(.gap-3) { gap: 0.5rem !important; }
+:deep(input), :deep(textarea), :deep(.reka-select-trigger) { text-align: left !important; }
+:deep(.reka-select-value) { text-align: right; }
+table { min-height: 100px !important; }
+tr, tbody { vertical-align: top !important; }
 </style>

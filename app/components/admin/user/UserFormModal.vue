@@ -14,7 +14,7 @@ const props = defineProps<{
     phoneNumber: string
     email?: string
     nationalCode?: string
-    role: string
+    role: number | null
     isActive: boolean
   }
   roles: UserRole[]
@@ -33,7 +33,7 @@ const form = reactive({
   email: '',
   nationalCode: '',
   password: '',
-  role: '',
+  role: null as number | null,
   isActive: true
 })
 
@@ -74,7 +74,7 @@ const resetForm = () => {
   form.email = ''
   form.nationalCode = ''
   form.password = ''
-  form.role = props.roles[0]?.id || ''
+  form.role = props.roles[0]?.id || null
   form.isActive = true
 }
 
@@ -84,7 +84,7 @@ const schema = z.object({
   phoneNumber: z.string().min(11, 'شماره تماس نامعتبر است').max(11, 'شماره تماس نامعتبر است'),
   email: z.string().email('ایمیل نامعتبر است').optional().or(z.literal('')),
   nationalCode: z.string().length(10, 'کد ملی باید ۱۰ رقم باشد').optional().or(z.literal('')),
-  role: z.string().min(1, 'لطفاً نقش کاربر را انتخاب کنید'),
+  role: z.number().nullable().refine(val => val !== null, 'لطفاً نقش کاربر را انتخاب کنید'),
   password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد').optional().or(z.literal('')),
   isActive: z.boolean()
 })

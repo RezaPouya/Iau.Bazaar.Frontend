@@ -4,13 +4,15 @@ import { getTokenExpiration } from '~/utils/jwt'
 import { useAccountService } from '~/services/account.service'
 
 export const useAuthStore = defineStore('auth', () => {
-  const accessToken = ref<string>('')
-  const refreshToken = ref<string>('')
+  const accessToken = ref('')
+  const refreshToken = ref('')
   const user = ref<AuthUser | null>(null)
 
   const refreshTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
   const isRefreshing = ref(false)
   const isHydrated = ref(false)
+
+  let refreshPromise: Promise<void> | null = null
 
   const isAuthenticated = computed(
     () => isHydrated.value && !!accessToken.value
@@ -23,14 +25,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const persistSession = (data?: {
+  const persistSession = (data: {
     accessToken: string
     refreshToken: string
     user: AuthUser
   }) => {
     if (!import.meta.client) return
-
-    if (!data) return
 
     localStorage.setItem('access_token', data.accessToken)
     localStorage.setItem('refresh_token', data.refreshToken)
@@ -43,6 +43,15 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
+  }
+
+  const clearAuth = () => {
+    accessToken.value = ''
+    refreshToken.value = ''
+    user.value = null
+
+    clearRefreshTimer()
+    removeSession()
   }
 
   const setAuth = (data: LoginResponse) => {
@@ -67,16 +76,76 @@ export const useAuthStore = defineStore('auth', () => {
     scheduleRefresh()
   }
 
-  const clearAuth = () => {
-    accessToken.value = ''
-    refreshToken.value = ''
-    user.value = null
+  const refreshAuthToken = async (): Promise<void> => {
+    if (!refreshToken.value) {
+      clearAuth()
+      return
+    }
+
+    if (refreshPromise) {
+      return refreshPromise
+    }
+
+    refreshPromise = (async () => {
+      try {
+        isRefreshing.value = true
+
+        const service = useAccountService()
+
+        const response = await service.refreshToken({
+          refreshToken: refreshToken.value
+        })
+
+        if (!response.isSuccess) {
+          throw new Error(response.message)
+        }
+
+        setAuth(response.data)
+      } catch (err) {
+        console.error('refreshAuthToken failed:', err)
+        clearAuth()
+        throw err
+      } finally {
+        isRefreshing.value = false
+        refreshPromise = null
+      }
+    })()
+
+    return refreshPromise
+  }
+
+  const scheduleRefresh = () => {
+    if (!accessToken.value) return
+
+    const expiration = getTokenExpiration(accessToken.value)
+
+    if (!expiration) {
+      clearAuth()
+      return
+    }
+
+    const safetyBuffer = 60_000
+    const delay = expiration - Date.now() - safetyBuffer
 
     clearRefreshTimer()
-    removeSession()
+
+    if (delay <= 0) {
+      // refreshAuthToken handles logout internally
+      refreshAuthToken().catch(() => {})
+      return
+    }
+
+    refreshTimeout.value = setTimeout(() => {
+      // refreshAuthToken handles logout internally
+      refreshAuthToken().catch(() => {})
+    }, delay)
   }
 
   const restoreSession = () => {
+    if (isHydrated.value) {
+      return !!accessToken.value
+    }
+
     if (!import.meta.client) {
       isHydrated.value = true
       return false
@@ -92,9 +161,17 @@ export const useAuthStore = defineStore('auth', () => {
         return false
       }
 
+      const refreshExpiration = getTokenExpiration(storedRefreshToken)
+
+      if (refreshExpiration && refreshExpiration <= Date.now() ) {
+        clearAuth()
+        isHydrated.value = true
+        return false
+      }
+
       accessToken.value = storedAccessToken
       refreshToken.value = storedRefreshToken
-      user.value = JSON.parse(storedUser)
+      user.value = JSON.parse(storedUser) as AuthUser
 
       scheduleRefresh()
 
@@ -102,13 +179,18 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     } catch (err) {
       console.error('restoreSession failed:', err)
+
       clearAuth()
+
       isHydrated.value = true
       return false
     }
   }
 
-  const login = async (userName: string, password: string) => {
+  const login = async (
+    userName: string,
+    password: string
+  ) => {
     try {
       const service = useAccountService()
 
@@ -133,62 +215,21 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { $api } = useNuxtApp()
+
       await $api.post('/account/logout')
 
-      toast.success('خروج موفق', 'با موفقیت از حساب کاربری خارج شدید')
+      toast.success(
+        'خروج موفق',
+        'با موفقیت از حساب کاربری خارج شدید'
+      )
     } catch {
-      toast.error('هشدار', 'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد')
+      toast.error(
+        'هشدار',
+        'ارتباط با سرور برقرار نشد، اما نشست شما بسته شد'
+      )
     } finally {
       clearAuth()
       await navigateTo('/login')
-    }
-  }
-
-  const scheduleRefresh = () => {
-    if (!accessToken.value) return
-
-    const expiration = getTokenExpiration(accessToken.value)
-    if (!expiration) {
-      clearAuth()
-      return
-    }
-
-    const safetyBuffer = 60_000
-    const delay = expiration - Date.now() - safetyBuffer
-
-    clearRefreshTimer()
-
-    if (delay <= 0) {
-      refreshAuthToken().catch(() => {})
-      return
-    }
-
-    refreshTimeout.value = setTimeout(() => {
-      refreshAuthToken().catch(() => {})
-    }, delay)
-  }
-
-  const refreshAuthToken = async () => {
-    if (isRefreshing.value || !refreshToken.value) return
-
-    try {
-      isRefreshing.value = true
-
-      const service = useAccountService()
-      const response = await service.refreshToken({
-        refreshToken: refreshToken.value
-      })
-
-      if (!response.isSuccess) {
-        throw new Error(response.message)
-      }
-
-      setAuth(response.data)
-    } catch (err) {
-      console.error('refreshAuthToken failed:', err)
-      clearAuth()
-    } finally {
-      isRefreshing.value = false
     }
   }
 
@@ -199,6 +240,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     isAuthenticated,
     isRefreshing,
+    isHydrated,
 
     login,
     logout,

@@ -25,17 +25,12 @@ const navigation = [
     to: '/admin/users'
   },
   {
-    label: 'مدیریت پیام‌ها', // آیتم جدید
-    icon: 'i-lucide-messages-square',
-    to: '/admin/messages'
-  },
-  {
     label: 'مدیریت دسته‌بندی‌ها',
     icon: 'i-lucide-tags',
     to: '/admin/product-categories'
   },
   {
-    label: 'مدیریت رسانه',
+    label: 'مدیریت رسانه ها',
     icon: 'i-lucide-folder',
     to: '/admin/media'
   },
@@ -55,15 +50,22 @@ const navigation = [
     to: '/admin/companies'
   },
   {
-    label: 'مدیریت محصولات',
+    label: ' محصولات',
     icon: 'i-lucide-box',
     to: '/admin/products'
   },
   {
-    label: 'مدیریت سفارشات',
+    label: ' سفارشات',
     icon: 'i-lucide-shopping-cart',
     to: '/admin/orders'
+  },
+  {
+    label: 'پیام های تماس با ما', // آیتم جدید
+    icon: 'i-lucide-messages-square',
+    to: '/admin/contact-us-messages'
   }
+
+
 ]
 
 // User dropdown items

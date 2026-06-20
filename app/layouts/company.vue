@@ -63,6 +63,10 @@ function isActive(item: any) {
   if (item.exact) return route.path === item.to
   return route.path.startsWith(item.to)
 }
+
+definePageMeta({
+  ssr: false // Disable server-side rendering for this page
+})
 </script>
 
 <template>
