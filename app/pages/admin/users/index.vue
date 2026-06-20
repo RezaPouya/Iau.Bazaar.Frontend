@@ -16,10 +16,11 @@ const { $api } = useNuxtApp()
 const toast = useToast()
 const userService = useAdminUserService()
 
-// Columns
+// ستون‌ها با دو ستون جداگانه برای نام و نام خانوادگی
 const columns = [
   { key: 'id', label: 'شناسه', sortable: true },
-  { key: 'fullName', label: 'نام کامل', sortable: true },
+  { key: 'firstName', label: 'نام', sortable: true },
+  { key: 'lastName', label: 'نام خانوادگی', sortable: true },
   { key: 'userName', label: 'نام کاربری', sortable: true },
   { key: 'phoneNumber', label: 'شماره تماس', sortable: true },
   { key: 'role', label: 'نقش', sortable: true },
@@ -28,6 +29,8 @@ const columns = [
   { key: 'lockoutEnd', label: 'آخرین ورود', sortable: true },
   { key: 'actions', label: 'عملیات', sortable: false }
 ]
+
+const getFullName = (user: User) => `${user.firstName} ${user.lastName}`
 
 // Format Persian date
 const formatPersianDate = (dateString: string | null) => {
@@ -62,7 +65,7 @@ const fetchRoles = async () => {
 const filterFullName = ref('')
 const filterUserName = ref('')
 const filterPhoneNumber = ref('')
-const filterRole = ref<string | null>(null)
+const filterRole = ref<number | null>(null)
 const filterIsActive = ref<string | null>(null)
 
 // Grid state
@@ -493,13 +496,10 @@ onMounted(async () => {
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="item in data"
-                  :key="item.id"
-                  class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
+                <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td class="px-3 py-2 text-center">{{ item.id }}</td>
-                  <td class="px-3 py-2 text-right">{{ item.fullName }}</td>
+                  <td class="px-3 py-2 text-right">{{ item.firstName }}</td>
+                  <td class="px-3 py-2 text-right">{{ item.lastName }}</td>
                   <td class="px-3 py-2 text-center">{{ item.userName }}</td>
                   <td class="px-3 py-2 text-left dir-ltr">{{ item.phoneNumber }}</td>
                   <td class="px-3 py-2 text-center">
@@ -515,44 +515,33 @@ onMounted(async () => {
                   <td class="px-3 py-2 text-center">{{ formatPersianDate(item.createdAt) }}</td>
                   <td class="px-3 py-2 text-center">{{ item.lockoutEnd ? formatPersianDate(item.lockoutEnd) : '—' }}</td>
                   <td class="px-3 py-2 text-center">
-                    <UDropdownMenu
-                      :items="[
-                        [
-                          {
-                            label: 'ویرایش',
-                            icon: 'i-lucide-edit',
-                            onSelect: () => openEditModal(item)
-                          },
-                          {
-                            label: 'تغییر رمز عبور',
-                            icon: 'i-lucide-key',
-                            onSelect: () => openPasswordModal(item)
-                          },
-                          {
-                            label: item.isActive ? 'غیرفعال کردن' : 'فعال کردن',
-                            icon: item.isActive ? 'i-lucide-toggle-left' : 'i-lucide-toggle-right',
-                            onSelect: () => toggleActive(item.id)
-                          },
-                          {
-                            label: 'حذف',
-                            icon: 'i-lucide-trash',
-                            color: 'error',
-                            onSelect: () => confirmDelete(item.id, item.fullName)
-                          }
-                        ]
-                      ]"
-                      :content="{ align: 'end' }"
-                    >
+                    <UDropdownMenu :items="[
+                      [
+                        {
+                          label: 'ویرایش',
+                          icon: 'i-lucide-edit',
+                          onSelect: () => openEditModal(item)
+                        },
+                        {
+                          label: 'تغییر رمز عبور',
+                          icon: 'i-lucide-key',
+                          onSelect: () => openPasswordModal(item)
+                        },
+                        {
+                          label: item.isActive ? 'غیرفعال کردن' : 'فعال کردن',
+                          icon: item.isActive ? 'i-lucide-toggle-left' : 'i-lucide-toggle-right',
+                          onSelect: () => toggleActive(item.id)
+                        },
+                        {
+                          label: 'حذف',
+                          icon: 'i-lucide-trash',
+                          color: 'error',
+                          onSelect: () => confirmDelete(item.id, getFullName(item))
+                        }
+                      ]
+                    ]" :content="{ align: 'end' }">
                       <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-more-vertical" />
                     </UDropdownMenu>
-                  </td>
-                </tr>
-                <tr v-if="data.length === 0">
-                  <td :colspan="columns.length" class="px-3 py-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center gap-2">
-                      <UIcon name="i-lucide-users" class="size-8 text-gray-300" />
-                      <span>هیچ کاربری یافت نشد</span>
-                    </div>
                   </td>
                 </tr>
               </tbody>

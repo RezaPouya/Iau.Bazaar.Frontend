@@ -6,49 +6,11 @@ import type { GridDataSourceRequest, GridDataSourceResult } from '~/types/grid'
 export const useAdminUserService = () => {
   const { $api } = useNuxtApp()
 
-  const getUsersList = async (
-    request: GridDataSourceRequest
-  ): Promise<GridDataSourceResult<User>> => {
-    try {
-      // ارسال درخواست
-      const response = await $api.post<ApiResponse<GridDataSourceResult<User>>>(
-        'panel/admin/users/list',
-        request
-      )
-
-      // بررسی وجود داده
-      if (!response?.data) {
-        throw new Error('پاسخی از سرور دریافت نشد')
-      }
-
-      // استخراج داده اصلی (response.data.data همان شیء اصلی است)
-      const mainData = response.data.data
-
-      // اگر mainData وجود نداشته باشد، از response.data استفاده می‌کنیم (برخی APIها مستقیماً داده را برمی‌گردانند)
-      const result = mainData || response.data
-
-      // حالا result شامل page, pageSize, totals, data است
-      return {
-        data: result.data || [],
-        totals: result.totals || 0,
-        page: result.page || 1,
-        pageSize: result.pageSize || 10,
-        totalPages: result.totalPages || 1
-      }
-    } catch (error) {
-      console.error('Error in getUsersList:', error)
-      // در صورت خطا، یک ساختار خالی برمی‌گردانیم
-      return {
-        data: [],
-        totals: 0,
-        page: 1,
-        pageSize: 10,
-        totalPages: 1
-      }
-    }
+  const getUsersList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<User>> => {
+    const response = await $api.post<ApiResponse<GridDataSourceResult<User>>>('panel/admin/users/list', request)
+    return response.data.data
   }
 
-  // بقیه متدها بدون تغییر
   const getUserById = async (userId: number): Promise<User> => {
     const response = await $api.get<ApiResponse<User>>(`panel/admin/users/${userId}`)
     return response.data.data

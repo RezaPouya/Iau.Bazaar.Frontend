@@ -1,38 +1,50 @@
 // types/user.ts
 export interface User {
-  id: number // Changed from userId
-  userName: string
+  id: number
   firstName: string
   lastName: string
-  fullName: string
+  userName: string
   phoneNumber: string
   email: string
   nationalCode: string
   isActive: boolean
   isLockedOut: boolean
   lockoutEnd: string | null
-  role: string
+  role: string // یا number بسته به نوع برگشتی از بک‌اند
   universityId: number | null
   growthCenterId: number | null
   companyId: number | null
   createdAt: string
-  // Add these if they exist
-  createdAtPersian?: string
-  lastLoginAtPersian?: string
+  // فیلدهای اضافی برای نمایش
+  fullName?: string // برای نمایش ترکیبی در UI (اختیاری)
 }
+
 export interface CreateUserInput {
-  fullName: string
   userName: string
+  password: string
+  firstName: string
+  lastName: string
   phoneNumber: string
   email?: string
   nationalCode?: string
-  password: string
-  role: string
-  isActive: boolean
+  role: number
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
 }
 
-export interface UpdateUserInput extends Partial<CreateUserInput> {
-  userId: number
+export interface UpdateUserInput {
+  id: number
+  firstName: string
+  lastName: string
+  phoneNumber: string
+  email?: string
+  nationalCode?: string
+  isActive: boolean
+  role: number
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
 }
 
 export interface UserRole {

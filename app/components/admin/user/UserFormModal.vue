@@ -1,4 +1,3 @@
-<!-- app/components/admin/user/UserFormModal.vue -->
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
@@ -9,13 +8,17 @@ const props = defineProps<{
   editingId: number | null
   initialData?: {
     userId?: number
-    fullName: string
+    firstName: string
+    lastName: string
     userName: string
     phoneNumber: string
     email?: string
     nationalCode?: string
     role: number | null
     isActive: boolean
+    universityId?: number | null
+    growthCenterId?: number | null
+    companyId?: number | null
   }
   roles: UserRole[]
 }>()
@@ -27,13 +30,17 @@ const emit = defineEmits<{
 
 const form = reactive({
   userId: null as number | null,
-  fullName: '',
+  firstName: '',
+  lastName: '',
   userName: '',
   phoneNumber: '',
   email: '',
   nationalCode: '',
   password: '',
   role: null as number | null,
+  universityId: null as number | null,
+  growthCenterId: null as number | null,
+  companyId: null as number | null,
   isActive: true
 })
 
@@ -44,13 +51,17 @@ watch(
   (data) => {
     if (data) {
       form.userId = data.userId || null
-      form.fullName = data.fullName
-      form.userName = data.userName
-      form.phoneNumber = data.phoneNumber
+      form.firstName = data.firstName || ''
+      form.lastName = data.lastName || ''
+      form.userName = data.userName || ''
+      form.phoneNumber = data.phoneNumber || ''
       form.email = data.email || ''
       form.nationalCode = data.nationalCode || ''
       form.role = data.role
-      form.isActive = data.isActive
+      form.isActive = data.isActive ?? true
+      form.universityId = data.universityId ?? null
+      form.growthCenterId = data.growthCenterId ?? null
+      form.companyId = data.companyId ?? null
       form.password = ''
     }
   },
@@ -60,15 +71,14 @@ watch(
 watch(
   () => props.open,
   (isOpen) => {
-    if (!isOpen) {
-      resetForm()
-    }
+    if (!isOpen) resetForm()
   }
 )
 
 const resetForm = () => {
   form.userId = null
-  form.fullName = ''
+  form.firstName = ''
+  form.lastName = ''
   form.userName = ''
   form.phoneNumber = ''
   form.email = ''
@@ -76,45 +86,57 @@ const resetForm = () => {
   form.password = ''
   form.role = props.roles[0]?.id || null
   form.isActive = true
+  form.universityId = null
+  form.growthCenterId = null
+  form.companyId = null
 }
 
 const schema = z.object({
-  fullName: z.string().min(3, 'نام کامل باید حداقل ۳ کاراکتر باشد'),
+  firstName: z.string().min(2, 'نام باید حداقل ۲ کاراکتر باشد'),
+  lastName: z.string().min(2, 'نام خانوادگی باید حداقل ۲ کاراکتر باشد'),
   userName: z.string().min(3, 'نام کاربری باید حداقل ۳ کاراکتر باشد'),
   phoneNumber: z.string().min(11, 'شماره تماس نامعتبر است').max(11, 'شماره تماس نامعتبر است'),
   email: z.string().email('ایمیل نامعتبر است').optional().or(z.literal('')),
   nationalCode: z.string().length(10, 'کد ملی باید ۱۰ رقم باشد').optional().or(z.literal('')),
   role: z.number().nullable().refine(val => val !== null, 'لطفاً نقش کاربر را انتخاب کنید'),
   password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد').optional().or(z.literal('')),
-  isActive: z.boolean()
+  isActive: z.boolean(),
+  universityId: z.number().nullable().optional(),
+  growthCenterId: z.number().nullable().optional(),
+  companyId: z.number().nullable().optional()
 })
 
 type FormData = z.infer<typeof schema>
 
 const onSubmit = async (event: FormSubmitEvent<FormData>) => {
-  const submitData = {
-    ...event.data,
-    userId: form.userId
-  }
+  const submitData = { ...event.data, userId: form.userId }
 
-  // Only send password if it's provided (for create or password change)
-  if (!submitData.password) {
+  // در حالت ویرایش، رمز عبور را فقط در صورت پر شدن ارسال کن
+  if (props.editingId && !submitData.password) {
     delete submitData.password
   }
+
+  // در حالت ایجاد، isActive را ارسال نکن (بک‌اند مقدار پیش‌فرض دارد)
+  if (!props.editingId) {
+    delete submitData.isActive
+  }
+
+  // حذف مقادیر null برای فیلدهای اختیاری
+  if (submitData.universityId === null) delete submitData.universityId
+  if (submitData.growthCenterId === null) delete submitData.growthCenterId
+  if (submitData.companyId === null) delete submitData.companyId
 
   emit('save', submitData)
 }
 
-const closeModal = () => {
-  emit('update:open', false)
-}
+const closeModal = () => emit('update:open', false)
 
-const roleOptions = computed(() => {
-  return props.roles.map((role) => ({
+const roleOptions = computed(() =>
+  props.roles.map((role) => ({
     label: role.nameFa || role.name,
     value: role.id
   }))
-})
+)
 </script>
 
 <template>
@@ -122,8 +144,12 @@ const roleOptions = computed(() => {
     <template #body>
       <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UFormField label="نام کامل" name="fullName" required>
-            <UInput v-model="form.fullName" class="w-full text-right" />
+          <UFormField label="نام" name="firstName" required>
+            <UInput v-model="form.firstName" class="w-full text-right" />
+          </UFormField>
+
+          <UFormField label="نام خانوادگی" name="lastName" required>
+            <UInput v-model="form.lastName" class="w-full text-right" />
           </UFormField>
 
           <UFormField label="نام کاربری" name="userName" required>
@@ -162,7 +188,21 @@ const roleOptions = computed(() => {
           </UFormField>
 
           <UFormField label="فعال" name="isActive" class="flex-1">
-            <USwitch v-model="form.isActive" />
+            <USwitch v-model="form.isActive" :disabled="!editingId" />
+            <p v-if="!editingId" class="text-xs text-dimmed">کاربر جدید به‌طور پیش‌فرض فعال است</p>
+          </UFormField>
+        </div>
+
+        <!-- فیلدهای روابط (اختیاری) -->
+        <div v-if="form.role === 2" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <UFormField label="دانشگاه" name="universityId">
+            <UInput v-model.number="form.universityId" type="number" placeholder="شناسه دانشگاه" class="w-full text-left" />
+          </UFormField>
+          <UFormField label="مرکز رشد" name="growthCenterId">
+            <UInput v-model.number="form.growthCenterId" type="number" placeholder="شناسه مرکز رشد" class="w-full text-left" />
+          </UFormField>
+          <UFormField label="شرکت" name="companyId">
+            <UInput v-model.number="form.companyId" type="number" placeholder="شناسه شرکت" class="w-full text-left" />
           </UFormField>
         </div>
 
