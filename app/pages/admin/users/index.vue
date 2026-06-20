@@ -8,7 +8,8 @@ import UserPasswordModal from '~/components/admin/user/UserPasswordModal.vue'
 definePageMeta({
   layout: 'admin',
   middleware: 'admin',
-  title: 'مدیریت کاربران'
+  title: 'مدیریت کاربران',
+  ssr: false
 })
 
 const { $api } = useNuxtApp()
