@@ -1,4 +1,3 @@
-<!-- app/components/admin/user/UserFormModal.vue -->
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
@@ -38,6 +37,7 @@ const { $api } = useNuxtApp()
 
 const form = reactive({
   id: null as number | null,
+
   firstName: '',
   lastName: '',
   userName: '',
@@ -146,9 +146,7 @@ watch(
 watch(
   () => props.open,
   (isOpen) => {
-    if (!isOpen) {
-      resetForm()
-    }
+    if (!isOpen) resetForm()
   }
 )
 
@@ -199,6 +197,7 @@ const schema = z
     }
   })
 
+
 type FormData = z.infer<typeof schema>
 
 const onSubmit = async (event: FormSubmitEvent<FormData>) => {
@@ -215,13 +214,20 @@ const onSubmit = async (event: FormSubmitEvent<FormData>) => {
     delete submitData.password
   }
 
+  // در حالت ایجاد، isActive را ارسال نکن (بک‌اند مقدار پیش‌فرض دارد)
+  if (!props.editingId) {
+    delete submitData.isActive
+  }
+
+  // حذف مقادیر null برای فیلدهای اختیاری
+  if (submitData.universityId === null) delete submitData.universityId
+  if (submitData.growthCenterId === null) delete submitData.growthCenterId
+  if (submitData.companyId === null) delete submitData.companyId
+
   emit('save', submitData)
 }
 
-const closeModal = () => {
-  emit('update:open', false)
-}
-
+const closeModal = () => emit('update:open', false)
 const roleOptions = computed(() => {
   return props.roles.map((role) => ({
     label: role.name,
@@ -322,7 +328,21 @@ const companyOptions = computed(() => companies.value.map((c) => ({ label: c.tit
           </UFormField>
 
           <UFormField label="فعال" name="isActive" class="flex-1">
-            <USwitch v-model="form.isActive" />
+            <USwitch v-model="form.isActive" :disabled="!editingId" />
+            <p v-if="!editingId" class="text-xs text-dimmed">کاربر جدید به‌طور پیش‌فرض فعال است</p>
+          </UFormField>
+        </div>
+
+        <!-- فیلدهای روابط (اختیاری) -->
+        <div v-if="form.role === 2" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <UFormField label="دانشگاه" name="universityId">
+            <UInput v-model.number="form.universityId" type="number" placeholder="شناسه دانشگاه" class="w-full text-left" />
+          </UFormField>
+          <UFormField label="مرکز رشد" name="growthCenterId">
+            <UInput v-model.number="form.growthCenterId" type="number" placeholder="شناسه مرکز رشد" class="w-full text-left" />
+          </UFormField>
+          <UFormField label="شرکت" name="companyId">
+            <UInput v-model.number="form.companyId" type="number" placeholder="شناسه شرکت" class="w-full text-left" />
           </UFormField>
         </div>
 

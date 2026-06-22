@@ -25,7 +25,6 @@ const columns = [
   { key: 'lockoutEnd', label: 'وضعیت قفل' },
   { key: 'actions', label: 'عملیات' }
 ]
-
 const formatPersianDate = (dateString: string | null) => {
   if (!dateString) return '—'
   try {
@@ -55,7 +54,6 @@ const fetchRoles = async () => {
     toast.add({ title: 'خطا در دریافت نقش‌ها', color: 'error' })
   }
 }
-
 // UserOutputDto.Role یک رشته است (مثل "Admin"، "CompanyUser") - این map برای نمایش فارسی است
 const roleLabelMap: Record<string, string> = {
   Admin: 'مدیر سامانه',
@@ -326,13 +324,10 @@ onMounted(async () => {
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="item in data"
-                  :key="item.id"
-                  class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
+                <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td class="px-3 py-2 text-center">{{ item.id }}</td>
-                  <td class="px-3 py-2 text-right">{{ item.fullName }}</td>
+                  <td class="px-3 py-2 text-right">{{ item.firstName }}</td>
+                  <td class="px-3 py-2 text-right">{{ item.lastName }}</td>
                   <td class="px-3 py-2 text-center">{{ item.userName }}</td>
                   <td class="px-3 py-2 text-left dir-ltr">{{ item.phoneNumber }}</td>
                   <td class="px-3 py-2 text-center">
@@ -382,14 +377,6 @@ onMounted(async () => {
                     >
                       <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-more-vertical" />
                     </UDropdownMenu>
-                  </td>
-                </tr>
-                <tr v-if="data.length === 0">
-                  <td :colspan="columns.length" class="px-3 py-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center gap-2">
-                      <UIcon name="i-lucide-users" class="size-8 text-gray-300" />
-                      <span>هیچ کاربری یافت نشد</span>
-                    </div>
                   </td>
                 </tr>
               </tbody>
