@@ -19,32 +19,41 @@ export interface UserListRequest {
   role?: number | null
 }
 
+// شکل استاندارد پاسخ بک‌اند - دقیقاً منطبق با ApiResponse<T> در WebApi
+// (همان الگویی که AccountController با ApiResponse<T>.Ok(...).ToHttpResponse() برمی‌گرداند)
+export interface ApiResponseBody<T> {
+  isSuccess: boolean
+  message: string
+  statusCode: number
+  errors: string[]
+  validationErrors: Record<string, string[]>
+  data: T
+}
+
 export const useAdminUserService = () => {
   const { $api } = useNuxtApp()
 
-  // نکته‌ی مهم: AdminUserManagementController از ApiResponse<T> استفاده نمی‌کند و
-  // مستقیماً Ok(dto) برمی‌گرداند. یعنی response.data همان DTO است، نه { data: DTO }.
-  // (برای GetList این به‌طور تصادفی کار می‌کرد چون GridDataSourceResult خودش هم یک
-  // فیلد data دارد، اما برای create/update/getById کاملاً اشتباه بود.)
+  // همه‌ی endpoint های این کنترلر اکنون ApiResponse<T> برمی‌گردانند،
+  // پس همیشه response.data.data خود داده‌ی واقعی است.
 
   const getUsersList = async (request: UserListRequest): Promise<GridDataSourceResult<User>> => {
-    const response = await $api.post<GridDataSourceResult<User>>('panel/admin/users/list', request)
-    return response.data
+    const response = await $api.post<ApiResponseBody<GridDataSourceResult<User>>>('panel/admin/users/list', request)
+    return response.data.data
   }
 
   const getUserById = async (userId: number): Promise<User> => {
-    const response = await $api.get<User>(`panel/admin/users/${userId}`)
-    return response.data
+    const response = await $api.get<ApiResponseBody<User>>(`panel/admin/users/${userId}`)
+    return response.data.data
   }
 
   const createUser = async (data: CreateUserInput): Promise<User> => {
-    const response = await $api.post<User>('panel/admin/users', data)
-    return response.data
+    const response = await $api.post<ApiResponseBody<User>>('panel/admin/users', data)
+    return response.data.data
   }
 
   const updateUser = async (userId: number, data: UpdateUserInput): Promise<User> => {
-    const response = await $api.put<User>(`panel/admin/users/${userId}`, data)
-    return response.data
+    const response = await $api.put<ApiResponseBody<User>>(`panel/admin/users/${userId}`, data)
+    return response.data.data
   }
 
   const deleteUser = async (userId: number): Promise<void> => {
@@ -56,15 +65,14 @@ export const useAdminUserService = () => {
   }
 
   const getRoles = async (): Promise<UserRole[]> => {
-    const response = await $api.get<UserRole[]>('panel/admin/users/roles')
-    return response.data
+    const response = await $api.get<ApiResponseBody<UserRole[]>>('panel/admin/users/roles')
+    return response.data.data
   }
 
   // عمداً حذف شد: resetUserPassword
-  // دلیل: بک‌اند فعلی هیچ endpoint ای برای تغییر رمز عبور کاربر موجود ندارد
-  // (نه در UserCoreService و نه در AdminUserManagementController).
-  // UpdateUserInputDto هم فیلد رمز عبور ندارد. اضافه کردن این قابلیت نیازمند
-  // تغییر بک‌اند است که طبق تصمیم فعلی، فعلاً انجام نمی‌شود.
+  // دلیل: بک‌اند فعلی هیچ endpoint/متدی برای تغییر رمز عبور کاربر موجود ندارد.
+  // UpdateUserInputDto هم فیلد رمز عبور ندارد. این قابلیت جدا نیاز به یک متد در
+  // UserCoreService + یک route جدید در این کنترلر دارد.
 
   return {
     getUsersList,
