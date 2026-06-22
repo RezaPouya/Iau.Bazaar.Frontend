@@ -1,6 +1,23 @@
-// types/user.ts
+// app/types/user.ts
+
+// مقادیر دقیقاً منطبق با AppUserRoleEnum در بک‌اند - این اعداد را تغییر ندهید
+export enum AppUserRole {
+  Admin = 1,
+  Operator = 2,
+  Customer = 3,
+  LegalCustomer = 4,
+  UniversityUser = 10,
+  GrowthCenterUser = 20,
+  CompanyUser = 30
+}
+
+// نقش‌هایی که برای ایجاد/ویرایش به انتخاب نهاد مرتبط نیاز دارند
+export const ROLES_REQUIRING_UNIVERSITY = [AppUserRole.UniversityUser]
+export const ROLES_REQUIRING_GROWTH_CENTER = [AppUserRole.GrowthCenterUser]
+export const ROLES_REQUIRING_COMPANY = [AppUserRole.CompanyUser]
+
 export interface User {
-  id: number // Changed from userId
+  id: number
   userName: string
   firstName: string
   lastName: string
@@ -11,32 +28,49 @@ export interface User {
   isActive: boolean
   isLockedOut: boolean
   lockoutEnd: string | null
-  role: string
+  role: string // نام نقش به صورت رشته - خروجی UserOutputDto.Role
   universityId: number | null
   growthCenterId: number | null
   companyId: number | null
   createdAt: string
-  // Add these if they exist
-  createdAtPersian?: string
-  lastLoginAtPersian?: string
 }
+
+// ورودی ایجاد کاربر - منطبق با CreateUserInputDto بک‌اند
 export interface CreateUserInput {
-  fullName: string
   userName: string
+  password: string
+  firstName: string
+  lastName: string
   phoneNumber: string
   email?: string
   nationalCode?: string
-  password: string
-  role: string
-  isActive: boolean
+  role: AppUserRole
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
 }
 
-export interface UpdateUserInput extends Partial<CreateUserInput> {
-  userId: number
-}
-
-export interface UserRole {
+// ورودی ویرایش کاربر - منطبق با UpdateUserInputDto بک‌اند (بدون پسورد و نام کاربری)
+export interface UpdateUserInput {
   id: number
+  firstName: string
+  lastName: string
+  phoneNumber: string
+  email?: string
+  nationalCode?: string
+  isActive: boolean
+  role: AppUserRole
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
+}
+
+// خروجی GET panel/admin/users/roles - شکل دقیق IdNameDto<AppUserRoleEnum>
+export interface UserRole {
+  id: AppUserRole
   name: string
-  nameFa: string
+}
+
+export interface ResetUserPasswordInput {
+  newPassword: string
 }

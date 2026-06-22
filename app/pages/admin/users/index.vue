@@ -1,9 +1,9 @@
 <!-- app/pages/admin/users/index.vue -->
 <script setup lang="ts">
-import { GridFilterOperation } from '~/types/grid'
-import { useAdminUserService } from '~/services/admin/user.service'
+import { useAdminUserService, type UserListRequest } from '~/services/admin/user.service'
 import UserFormModal from '~/components/admin/user/UserFormModal.vue'
 import UserPasswordModal from '~/components/admin/user/UserPasswordModal.vue'
+import type { UserRole } from '~/types/user'
 
 definePageMeta({
   layout: 'admin',
@@ -12,24 +12,23 @@ definePageMeta({
   ssr: false
 })
 
-const { $api } = useNuxtApp()
 const toast = useToast()
 const userService = useAdminUserService()
 
-// Columns
+// ---------- ستون‌ها ----------
 const columns = [
-  { key: 'id', label: 'شناسه', sortable: true },
-  { key: 'fullName', label: 'نام کامل', sortable: true },
-  { key: 'userName', label: 'نام کاربری', sortable: true },
-  { key: 'phoneNumber', label: 'شماره تماس', sortable: true },
-  { key: 'role', label: 'نقش', sortable: true },
-  { key: 'isActive', label: 'فعال', sortable: true },
-  { key: 'createdAt', label: 'تاریخ ثبت‌نام', sortable: true },
-  { key: 'lockoutEnd', label: 'آخرین ورود', sortable: true },
-  { key: 'actions', label: 'عملیات', sortable: false }
+  { key: 'id', label: 'شناسه' },
+  { key: 'fullName', label: 'نام کامل' },
+  { key: 'userName', label: 'نام کاربری' },
+  { key: 'phoneNumber', label: 'شماره تماس' },
+  { key: 'role', label: 'نقش' },
+  { key: 'isActive', label: 'فعال' },
+  { key: 'createdAt', label: 'تاریخ ثبت‌نام' },
+  { key: 'lockoutEnd', label: 'وضعیت قفل' },
+  { key: 'actions', label: 'عملیات' }
 ]
 
-// Format Persian date
+// فرمت تاریخ
 const formatPersianDate = (dateString: string | null) => {
   if (!dateString) return '—'
   try {
@@ -46,139 +45,80 @@ const formatPersianDate = (dateString: string | null) => {
   }
 }
 
-// Roles
-const roles = ref<{ id: string; name: string; nameFa: string }[]>([])
+// ---------- نقش‌ها ----------
+// خروجی panel/admin/users/roles دقیقاً { id: number (مقدار enum), name: string } است
+const roles = ref<UserRole[]>([])
 const fetchRoles = async () => {
   try {
-    const response = await $api.get('panel/admin/users/roles')
-    console.log('Roles response:', response)
-    roles.value = response.data.data || response.data || []
+    roles.value = await userService.getRoles()
   } catch (error) {
     console.error('خطا در دریافت نقش‌ها', error)
+    toast.add({ title: 'خطا در دریافت نقش‌ها', color: 'error' })
   }
 }
 
-// Filters
-const filterFullName = ref('')
-const filterUserName = ref('')
-const filterPhoneNumber = ref('')
-const filterRole = ref<string | null>(null)
+// نام نقش از روی مقدار رشته‌ای که UserOutputDto.Role برمی‌گرداند (مثل "Admin"، "CompanyUser")
+const roleLabelMap: Record<string, string> = {
+  Admin: 'مدیر سامانه',
+  Operator: 'اپراتور سامانه',
+  Customer: 'مشتری حقیقی',
+  LegalCustomer: 'مشتری حقوقی',
+  UniversityUser: 'مسئول دانشگاه',
+  GrowthCenterUser: 'مسئول مرکز رشد',
+  CompanyUser: 'مسئول شرکت'
+}
+
+const roleColorMap: Record<string, string> = {
+  Admin: 'error',
+  Operator: 'warning',
+  Customer: 'info',
+  LegalCustomer: 'info',
+  UniversityUser: 'primary',
+  GrowthCenterUser: 'primary',
+  CompanyUser: 'primary'
+}
+
+const getRoleName = (role: string) => roleLabelMap[role] || role
+const getRoleColor = (role: string) => roleColorMap[role] || 'neutral'
+
+// ---------- فیلترها ----------
+const filterSearchTerm = ref('')
+const filterRole = ref<number | null>(null)
 const filterIsActive = ref<string | null>(null)
 
-// Grid state
+// ---------- وضعیت گرید ----------
 const data = ref<any[]>([])
 const totals = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const sortKey = ref<string | null>(null)
-const sortDirection = ref<'asc' | 'desc' | null>(null)
 
-// Load data
+// ---------- بارگذاری داده‌ها ----------
+// نکته مهم: AdminUserManagementController فیلترها را از inputParams.filters نمی‌خواند،
+// بلکه searchTerm / isActive / isLockedOut / role را به صورت فیلدهای مستقیم در بدنه‌ی درخواست می‌خواند.
 const loadData = async () => {
   loading.value = true
   try {
-    const filters: any[] = []
-
-    if (filterFullName.value.trim()) {
-      filters.push({
-        propertyName: 'fullName',
-        operation: GridFilterOperation.Contains,
-        value: filterFullName.value.trim()
-      })
-    }
-    if (filterUserName.value.trim()) {
-      filters.push({
-        propertyName: 'userName',
-        operation: GridFilterOperation.Contains,
-        value: filterUserName.value.trim()
-      })
-    }
-    if (filterPhoneNumber.value.trim()) {
-      filters.push({
-        propertyName: 'phoneNumber',
-        operation: GridFilterOperation.Contains,
-        value: filterPhoneNumber.value.trim()
-      })
-    }
-    if (filterRole.value) {
-      filters.push({
-        propertyName: 'role',
-        operation: GridFilterOperation.Equals,
-        value: filterRole.value
-      })
-    }
-    if (filterIsActive.value !== null) {
-      filters.push({
-        propertyName: 'isActive',
-        operation: GridFilterOperation.Equals,
-        value: filterIsActive.value === 'true'
-      })
-    }
-
-    const request = {
+    const request: UserListRequest = {
       page: currentPage.value,
       pageSize: pageSize.value,
-      inputParams: {
-        filters,
-        sort:
-          sortKey.value && sortDirection.value
-            ? {
-                propertyName: sortKey.value,
-                ascending: sortDirection.value === 'asc'
-              }
-            : null
-      }
+      inputParams: { filters: [], sort: null },
+      searchTerm: filterSearchTerm.value.trim() || null,
+      isActive: filterIsActive.value !== null ? filterIsActive.value === 'true' : null,
+      role: filterRole.value
     }
 
-    console.log('Request payload:', request)
-
-    // Try direct API call first to see if it works
-    try {
-      const directResponse = await $api.post('panel/admin/users/list', request)
-      console.log('Direct API response:', directResponse)
-      console.log('Direct API data:', directResponse.data)
-
-      // If direct call works, use that data
-      if (directResponse.data && directResponse.data.data) {
-        const responseData = directResponse.data.data
-        data.value = responseData.data || responseData || []
-        totals.value = responseData.totals || responseData.total || 0
-        currentPage.value = responseData.page || 1
-        pageSize.value = responseData.pageSize || 10
-        console.log('Data loaded successfully:', data.value)
-        return
-      }
-    } catch (directError) {
-      console.error('Direct API call failed, trying service:', directError)
-    }
-
-    // Fallback to service call
     const result = await userService.getUsersList(request)
-    console.log('Service response:', result)
 
-    // Handle different response structures
-    if (result && result.data) {
-      data.value = result.data
-      totals.value = result.totals || result.total || 0
-      currentPage.value = result.page || 1
-      pageSize.value = result.pageSize || 10
-    } else if (Array.isArray(result)) {
-      data.value = result
-      totals.value = result.length
-    } else {
-      data.value = result || []
-      totals.value = 0
-    }
-
-    console.log('Final data:', data.value)
-    console.log('Total records:', totals.value)
-
+    data.value = result.data || []
+    totals.value = result.totals || 0
+    currentPage.value = result.page || 1
+    pageSize.value = result.pageSize || pageSize.value
   } catch (err: any) {
-    console.error('Error loading data:', err)
+    console.error('Error loading users:', err)
     toast.add({
       title: 'خطا در بارگذاری داده‌ها',
-      description: err.message || 'لطفاً دوباره تلاش کنید',
+      description: err.response?.data?.message || err.message || 'لطفاً دوباره تلاش کنید',
       color: 'error'
     })
     data.value = []
@@ -188,9 +128,9 @@ const loadData = async () => {
   }
 }
 
-// Pagination
-const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
-const startIndex = computed(() => (currentPage.value - 1) * pageSize.value + 1)
+// ---------- صفحه‌بندی ----------
+const totalPages = computed(() => Math.max(1, Math.ceil(totals.value / pageSize.value)))
+const startIndex = computed(() => (totals.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
 const endIndex = computed(() => Math.min(currentPage.value * pageSize.value, totals.value))
 
 const setPage = (page: number) => {
@@ -204,44 +144,21 @@ const setPageSize = (size: number) => {
   loadData()
 }
 
-// Sorting
-const setSort = (key: string) => {
-  if (sortKey.value === key) {
-    if (sortDirection.value === 'asc') sortDirection.value = 'desc'
-    else if (sortDirection.value === 'desc') sortDirection.value = null
-    else sortDirection.value = 'asc'
-  } else {
-    sortKey.value = key
-    sortDirection.value = 'asc'
-  }
-  currentPage.value = 1
-  loadData()
-}
-
-const getSortIcon = (key: string) => {
-  if (sortKey.value !== key) return 'i-lucide-arrow-up-down'
-  if (sortDirection.value === 'asc') return 'i-lucide-arrow-up'
-  if (sortDirection.value === 'desc') return 'i-lucide-arrow-down'
-  return 'i-lucide-arrow-up-down'
-}
-
-// Filters
+// ---------- فیلترها ----------
 const applyFilters = () => {
   currentPage.value = 1
   loadData()
 }
 
 const clearFilters = () => {
-  filterFullName.value = ''
-  filterUserName.value = ''
-  filterPhoneNumber.value = ''
+  filterSearchTerm.value = ''
   filterRole.value = null
   filterIsActive.value = null
   currentPage.value = 1
   loadData()
 }
 
-// Modal states
+// ---------- مودال‌ها ----------
 const formModalOpen = ref(false)
 const editingUser = ref<any>(null)
 const passwordModalOpen = ref(false)
@@ -265,12 +182,16 @@ const openPasswordModal = (user: any) => {
   passwordModalOpen.value = true
 }
 
-// Save user
+// ---------- ذخیره کاربر ----------
 const handleSave = async (formData: any) => {
   try {
     if (formData.id) {
-      const { id, ...updateData } = formData
+      const { id, password, ...updateData } = formData
       await userService.updateUser(id, updateData)
+      // اگر رمز جدید هم وارد شده بود، جدا ارسال می‌شود
+      if (password) {
+        await userService.resetUserPassword(id, password)
+      }
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
       await userService.createUser(formData)
@@ -287,7 +208,7 @@ const handleSave = async (formData: any) => {
   }
 }
 
-// Reset password
+// ---------- تغییر رمز عبور ----------
 const handleResetPassword = async (password: string) => {
   if (!selectedUserForPassword.value) return
 
@@ -305,7 +226,7 @@ const handleResetPassword = async (password: string) => {
   }
 }
 
-// Delete user
+// ---------- حذف کاربر ----------
 const deleteUser = async (userId: number) => {
   try {
     await userService.deleteUser(userId)
@@ -320,7 +241,19 @@ const deleteUser = async (userId: number) => {
   }
 }
 
-// Toggle active
+const confirmDelete = (userId: number, fullName: string) => {
+  toast.add({
+    title: 'تأیید حذف',
+    description: `آیا از حذف کاربر "${fullName}" اطمینان دارید؟`,
+    color: 'error',
+    actions: [
+      { label: 'بله', onClick: () => deleteUser(userId) },
+      { label: 'خیر', onClick: () => {} }
+    ]
+  })
+}
+
+// ---------- فعال/غیرفعال ----------
 const toggleActive = async (userId: number) => {
   try {
     await userService.toggleUserActive(userId)
@@ -335,55 +268,9 @@ const toggleActive = async (userId: number) => {
   }
 }
 
-// Confirm delete
-const confirmDelete = (userId: number, fullName: string) => {
-  toast.add({
-    title: 'تأیید حذف',
-    description: `آیا از حذف کاربر "${fullName}" اطمینان دارید؟`,
-    color: 'error',
-    actions: [
-      { label: 'بله', onClick: () => deleteUser(userId) },
-      { label: 'خیر', onClick: () => {} }
-    ]
-  })
-}
-
-// Role badge color
-const getRoleColor = (role: string) => {
-  const roleColors: Record<string, string> = {
-    Admin: 'error',
-    Operator: 'warning',
-    Customer: 'info',
-    CompanyAdmin: 'primary'
-  }
-  return roleColors[role] || 'neutral'
-}
-
-const getRoleName = (role: string) => {
-  const roleNames: Record<string, string> = {
-    Admin: 'مدیر',
-    Operator: 'اپراتور',
-    Customer: 'کاربر عادی',
-    CompanyAdmin: 'مدیر شرکت'
-  }
-  return roleNames[role] || role
-}
-
-// Debug: Check if data is loading
-watch(data, (newVal) => {
-  console.log('Data changed:', newVal)
-})
-
-watch(totals, (newVal) => {
-  console.log('Total changed:', newVal)
-})
-
 onMounted(async () => {
   await fetchRoles()
-  // Small delay to ensure everything is ready
-  setTimeout(() => {
-    loadData()
-  }, 100)
+  await loadData()
 })
 </script>
 
@@ -398,40 +285,21 @@ onMounted(async () => {
         </UButton>
       </div>
 
-      <!-- Filters -->
+      <!-- فیلترها -->
       <UCard class="mb-3 p-3">
         <div class="flex flex-wrap gap-2 items-end">
-          <UFormField label="نام کامل" class="flex-1 min-w-[150px]">
+          <UFormField label="جستجو" class="flex-1 min-w-[200px]">
             <UInput
-              v-model="filterFullName"
-              placeholder="جستجو..."
+              v-model="filterSearchTerm"
+              placeholder="نام، نام کاربری، شماره تماس، ایمیل یا کد ملی..."
               class="w-full text-right"
               @keyup.enter="applyFilters"
             />
           </UFormField>
-          <UFormField label="نام کاربری" class="w-40">
-            <UInput
-              v-model="filterUserName"
-              placeholder="نام کاربری..."
-              class="w-full text-right"
-              @keyup.enter="applyFilters"
-            />
-          </UFormField>
-          <UFormField label="شماره تماس" class="w-36">
-            <UInput
-              v-model="filterPhoneNumber"
-              placeholder="شماره تماس..."
-              class="w-full text-left"
-              @keyup.enter="applyFilters"
-            />
-          </UFormField>
-          <UFormField label="نقش کاربری" class="w-32">
+          <UFormField label="نقش کاربری" class="w-40">
             <USelect
               v-model="filterRole"
-              :items="[
-                { label: 'همه نقش‌ها', value: null },
-                ...roles.map((r) => ({ label: r.nameFa || r.name, value: r.id }))
-              ]"
+              :items="[{ label: 'همه نقش‌ها', value: null }, ...roles.map((r) => ({ label: r.name, value: r.id }))]"
               class="w-full"
               :popper="{ placement: 'bottom-end' }"
             />
@@ -455,12 +323,7 @@ onMounted(async () => {
         </div>
       </UCard>
 
-      <!-- Debug Info -->
-      <div v-if="!loading" class="mb-2 text-xs text-gray-500">
-        تعداد کل: {{ totals }} - تعداد رکوردها: {{ data.length }}
-      </div>
-
-      <!-- Loading -->
+      <!-- بارگذاری -->
       <UCard v-if="loading" class="flex justify-center py-8">
         <div class="flex flex-col items-center gap-2">
           <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
@@ -468,7 +331,7 @@ onMounted(async () => {
         </div>
       </UCard>
 
-      <!-- Table -->
+      <!-- جدول -->
       <div v-else>
         <UCard class="overflow-hidden p-0">
           <div class="overflow-x-auto">
@@ -478,16 +341,10 @@ onMounted(async () => {
                   <th
                     v-for="col in columns"
                     :key="col.key"
-                    class="px-3 py-2 text-center border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    @click="col.sortable && setSort(col.key)"
+                    class="px-3 py-2 text-center border-b border-gray-200 dark:border-gray-700"
                   >
                     <div class="flex items-center justify-center gap-1 whitespace-nowrap">
                       {{ col.label }}
-                      <UIcon
-                        v-if="col.sortable"
-                        :name="getSortIcon(col.key)"
-                        class="size-3.5 flex-shrink-0"
-                      />
                     </div>
                   </th>
                 </tr>
@@ -513,7 +370,10 @@ onMounted(async () => {
                     </UBadge>
                   </td>
                   <td class="px-3 py-2 text-center">{{ formatPersianDate(item.createdAt) }}</td>
-                  <td class="px-3 py-2 text-center">{{ item.lockoutEnd ? formatPersianDate(item.lockoutEnd) : '—' }}</td>
+                  <td class="px-3 py-2 text-center">
+                    <UBadge v-if="item.isLockedOut" color="error" variant="subtle" size="sm">قفل شده</UBadge>
+                    <span v-else class="text-gray-400">—</span>
+                  </td>
                   <td class="px-3 py-2 text-center">
                     <UDropdownMenu
                       :items="[
@@ -559,8 +419,8 @@ onMounted(async () => {
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="totalPages > 0" class="flex flex-wrap justify-between items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700">
+          <!-- صفحه‌بندی -->
+          <div v-if="totals > 0" class="flex flex-wrap justify-between items-center gap-2 p-3 border-t border-gray-200 dark:border-gray-700">
             <div class="text-sm text-gray-500">
               نمایش {{ startIndex }} - {{ endIndex }} از {{ totals }} کاربر
             </div>
@@ -596,7 +456,7 @@ onMounted(async () => {
         </UCard>
       </div>
 
-      <!-- Modals -->
+      <!-- مودال‌ها -->
       <UserFormModal
         v-model:open="formModalOpen"
         :editing-id="editingUser?.id || null"
@@ -645,7 +505,6 @@ tbody {
   vertical-align: top !important;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .compact-grid :deep(.p-4) {
     padding: 0.5rem !important;
