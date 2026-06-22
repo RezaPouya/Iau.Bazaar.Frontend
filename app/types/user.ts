@@ -5,6 +5,7 @@ export interface User {
   userName: string
   firstName: string
   lastName: string
+  fullName: string
   phoneNumber: string
   email: string
   nationalCode: string
@@ -19,7 +20,6 @@ export interface User {
 }
 
 // ورودی ایجاد کاربر - باید دقیقاً منطبق با CreateUserInputDto بک‌اند باشد
-
 export interface CreateUserInput {
   userName: string
   password: string
