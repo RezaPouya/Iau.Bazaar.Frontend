@@ -2,8 +2,12 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { UserRole } from '~/types/user'
-import { AppUserRole, ROLES_REQUIRING_UNIVERSITY, ROLES_REQUIRING_GROWTH_CENTER, ROLES_REQUIRING_COMPANY } from '~/types/user'
+
+// مقادیر دقیقاً برابر AppUserRoleEnum در بک‌اند - این اعداد را تغییر ندهید
+// Admin=1, Operator=2, Customer=3, LegalCustomer=4, UniversityUser=10, GrowthCenterUser=20, CompanyUser=30
+const ROLES_REQUIRING_UNIVERSITY = [10]
+const ROLES_REQUIRING_GROWTH_CENTER = [20]
+const ROLES_REQUIRING_COMPANY = [30]
 
 const props = defineProps<{
   open: boolean
@@ -22,7 +26,7 @@ const props = defineProps<{
     growthCenterId?: number | null
     companyId?: number | null
   }
-  roles: UserRole[]
+  roles: { id: number; name: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -50,7 +54,8 @@ const form = reactive({
 
 const showPassword = ref(false)
 
-// ========== لیست دانشگاه‌ها / مراکز رشد / شرکت‌ها برای انتخاب وابسته به نقش ==========
+// ========== لیست‌های دانشگاه/مرکز رشد/شرکت برای انتخاب وابسته به نقش ==========
+// از همان الگوی موجود در companies/index.vue و growth-centers/index.vue استفاده می‌کند
 const universities = ref<{ id: number; title: string }[]>([])
 const growthCenters = ref<{ id: number; title: string; universityName?: string }[]>([])
 const companies = ref<{ id: number; title: string }[]>([])
@@ -105,12 +110,11 @@ onMounted(async () => {
   loadingRelatedLists.value = false
 })
 
-// ========== نمایش شرطی فیلد نهاد مرتبط بر اساس نقش انتخاب‌شده ==========
-const needsUniversity = computed(() => ROLES_REQUIRING_UNIVERSITY.includes(form.role as AppUserRole))
-const needsGrowthCenter = computed(() => ROLES_REQUIRING_GROWTH_CENTER.includes(form.role as AppUserRole))
-const needsCompany = computed(() => ROLES_REQUIRING_COMPANY.includes(form.role as AppUserRole))
+const needsUniversity = computed(() => ROLES_REQUIRING_UNIVERSITY.includes(form.role as number))
+const needsGrowthCenter = computed(() => ROLES_REQUIRING_GROWTH_CENTER.includes(form.role as number))
+const needsCompany = computed(() => ROLES_REQUIRING_COMPANY.includes(form.role as number))
 
-// هرگاه نقش تغییر کند، فیلدهای نهاد نامرتبط را خالی می‌کنیم تا اعتبارسنجی بک‌اند رد نشود
+// با تغییر نقش، فیلدهای نهاد نامرتبط را خالی می‌کنیم وگرنه ValidateRoleAndEntity در بک‌اند رد می‌کند
 watch(() => form.role, () => {
   if (!needsUniversity.value) form.universityId = null
   if (!needsGrowthCenter.value) form.growthCenterId = null
@@ -173,6 +177,7 @@ const schema = z
     email: z.string().email('ایمیل نامعتبر است').optional().or(z.literal('')),
     nationalCode: z.string().length(10, 'کد ملی باید ۱۰ رقم باشد').optional().or(z.literal('')),
     role: z.number().nullable().refine((val) => val !== null, 'لطفاً نقش کاربر را انتخاب کنید'),
+    // رمز عبور فقط هنگام ایجاد کاربر جدید قابل تنظیم است (بک‌اند راهی برای تغییر آن در ویرایش ندارد)
     password: z.string().min(6, 'رمز عبور باید حداقل ۶ کاراکتر باشد').optional().or(z.literal('')),
     isActive: z.boolean(),
     universityId: z.number().nullable().optional(),
@@ -180,17 +185,15 @@ const schema = z
     companyId: z.number().nullable().optional()
   })
   .superRefine((data, ctx) => {
-    // اعتبارسنجی سمت کلاینت منطبق با ValidateRoleAndEntity در بک‌اند
-    if (ROLES_REQUIRING_UNIVERSITY.includes(data.role as AppUserRole) && !data.universityId) {
+    if (ROLES_REQUIRING_UNIVERSITY.includes(data.role as number) && !data.universityId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'لطفاً دانشگاه را انتخاب کنید', path: ['universityId'] })
     }
-    if (ROLES_REQUIRING_GROWTH_CENTER.includes(data.role as AppUserRole) && !data.growthCenterId) {
+    if (ROLES_REQUIRING_GROWTH_CENTER.includes(data.role as number) && !data.growthCenterId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'لطفاً مرکز رشد را انتخاب کنید', path: ['growthCenterId'] })
     }
-    if (ROLES_REQUIRING_COMPANY.includes(data.role as AppUserRole) && !data.companyId) {
+    if (ROLES_REQUIRING_COMPANY.includes(data.role as number) && !data.companyId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'لطفاً شرکت را انتخاب کنید', path: ['companyId'] })
     }
-    // برای ایجاد کاربر جدید، رمز عبور الزامی است
     if (!props.editingId && !data.password) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'رمز عبور برای کاربر جدید الزامی است', path: ['password'] })
     }
@@ -207,8 +210,8 @@ const onSubmit = async (event: FormSubmitEvent<FormData>) => {
     companyId: needsCompany.value ? event.data.companyId : null
   }
 
-  // رمز عبور فقط در صورت ایجاد یا وارد کردن مقدار جدید ارسال می‌شود
-  if (!submitData.password) {
+  // در حالت ویرایش، بک‌اند فیلد رمز عبور ندارد - همیشه حذفش می‌کنیم تا چیزی بی‌فایده ارسال نشود
+  if (form.id || !submitData.password) {
     delete submitData.password
   }
 
@@ -251,6 +254,7 @@ const companyOptions = computed(() => companies.value.map((c) => ({ label: c.tit
 
           <UFormField label="نام کاربری" name="userName" required>
             <UInput v-model="form.userName" class="w-full text-left" :disabled="!!editingId" />
+            <p v-if="editingId" class="text-xs text-dimmed mt-1">نام کاربری پس از ایجاد قابل تغییر نیست</p>
           </UFormField>
 
           <UFormField label="شماره تماس" name="phoneNumber" required>
@@ -269,19 +273,18 @@ const companyOptions = computed(() => companies.value.map((c) => ({ label: c.tit
             <USelect v-model="form.role" :items="roleOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
 
-          <UFormField label="رمز عبور" name="password">
+          <UFormField v-if="!editingId" label="رمز عبور" name="password">
             <div class="flex gap-2">
               <UInput
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 class="flex-1 text-left"
-                :placeholder="editingId ? 'در صورت تمایل رمز جدید وارد کنید' : 'رمز عبور را وارد کنید'"
+                placeholder="رمز عبور را وارد کنید"
               />
               <UButton size="sm" color="neutral" variant="ghost" @click="showPassword = !showPassword">
                 <UIcon :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" />
               </UButton>
             </div>
-            <p v-if="editingId" class="text-xs text-dimmed mt-1">برای تغییر رمز عبور، مقدار جدید وارد کنید</p>
           </UFormField>
 
           <!-- فیلدهای وابسته به نقش -->

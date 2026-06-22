@@ -2,8 +2,6 @@
 <script setup lang="ts">
 import { useAdminUserService, type UserListRequest } from '~/services/admin/user.service'
 import UserFormModal from '~/components/admin/user/UserFormModal.vue'
-import UserPasswordModal from '~/components/admin/user/UserPasswordModal.vue'
-import type { UserRole } from '~/types/user'
 
 definePageMeta({
   layout: 'admin',
@@ -28,7 +26,6 @@ const columns = [
   { key: 'actions', label: 'عملیات' }
 ]
 
-// فرمت تاریخ
 const formatPersianDate = (dateString: string | null) => {
   if (!dateString) return '—'
   try {
@@ -46,8 +43,10 @@ const formatPersianDate = (dateString: string | null) => {
 }
 
 // ---------- نقش‌ها ----------
-// خروجی panel/admin/users/roles دقیقاً { id: number (مقدار enum), name: string } است
-const roles = ref<UserRole[]>([])
+// خروجی GET panel/admin/users/roles دقیقاً { id: number (مقدار enum), name: string } است
+// (نه { id, nameFa }). id ها غیرمتوالی‌اند: Admin=1, Operator=2, Customer=3, LegalCustomer=4,
+// UniversityUser=10, GrowthCenterUser=20, CompanyUser=30
+const roles = ref<{ id: number; name: string }[]>([])
 const fetchRoles = async () => {
   try {
     roles.value = await userService.getRoles()
@@ -57,7 +56,7 @@ const fetchRoles = async () => {
   }
 }
 
-// نام نقش از روی مقدار رشته‌ای که UserOutputDto.Role برمی‌گرداند (مثل "Admin"، "CompanyUser")
+// UserOutputDto.Role یک رشته است (مثل "Admin"، "CompanyUser") - این map برای نمایش فارسی است
 const roleLabelMap: Record<string, string> = {
   Admin: 'مدیر سامانه',
   Operator: 'اپراتور سامانه',
@@ -94,8 +93,8 @@ const pageSize = ref(10)
 const loading = ref(false)
 
 // ---------- بارگذاری داده‌ها ----------
-// نکته مهم: AdminUserManagementController فیلترها را از inputParams.filters نمی‌خواند،
-// بلکه searchTerm / isActive / isLockedOut / role را به صورت فیلدهای مستقیم در بدنه‌ی درخواست می‌خواند.
+// نکته مهم: این کنترلر فیلترها را از inputParams.filters نمی‌خواند بلکه از فیلدهای
+// مستقیم searchTerm/isActive/role در بدنه‌ی JSON. (برخلاف بقیه‌ی صفحات ادمین)
 const loadData = async () => {
   loading.value = true
   try {
@@ -144,7 +143,6 @@ const setPageSize = (size: number) => {
   loadData()
 }
 
-// ---------- فیلترها ----------
 const applyFilters = () => {
   currentPage.value = 1
   loadData()
@@ -158,11 +156,9 @@ const clearFilters = () => {
   loadData()
 }
 
-// ---------- مودال‌ها ----------
+// ---------- مودال فرم ----------
 const formModalOpen = ref(false)
 const editingUser = ref<any>(null)
-const passwordModalOpen = ref(false)
-const selectedUserForPassword = ref<{ userId: number; fullName: string } | null>(null)
 
 const openCreateModal = () => {
   editingUser.value = null
@@ -174,24 +170,12 @@ const openEditModal = (user: any) => {
   formModalOpen.value = true
 }
 
-const openPasswordModal = (user: any) => {
-  selectedUserForPassword.value = {
-    userId: user.id,
-    fullName: user.fullName
-  }
-  passwordModalOpen.value = true
-}
-
 // ---------- ذخیره کاربر ----------
 const handleSave = async (formData: any) => {
   try {
     if (formData.id) {
-      const { id, password, ...updateData } = formData
+      const { id, ...updateData } = formData
       await userService.updateUser(id, updateData)
-      // اگر رمز جدید هم وارد شده بود، جدا ارسال می‌شود
-      if (password) {
-        await userService.resetUserPassword(id, password)
-      }
       toast.add({ title: 'بروزرسانی موفق', color: 'success' })
     } else {
       await userService.createUser(formData)
@@ -202,24 +186,6 @@ const handleSave = async (formData: any) => {
   } catch (error: any) {
     toast.add({
       title: 'خطا در ذخیره',
-      description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
-      color: 'error'
-    })
-  }
-}
-
-// ---------- تغییر رمز عبور ----------
-const handleResetPassword = async (password: string) => {
-  if (!selectedUserForPassword.value) return
-
-  try {
-    await userService.resetUserPassword(selectedUserForPassword.value.userId, password)
-    toast.add({ title: 'رمز عبور با موفقیت تغییر کرد', color: 'success' })
-    passwordModalOpen.value = false
-    selectedUserForPassword.value = null
-  } catch (error: any) {
-    toast.add({
-      title: 'خطا در تغییر رمز عبور',
       description: error.response?.data?.message || 'لطفاً دوباره تلاش کنید',
       color: 'error'
     })
@@ -266,6 +232,16 @@ const toggleActive = async (userId: number) => {
       color: 'error'
     })
   }
+}
+
+// نکته: قابلیت «تغییر رمز عبور» عمداً از منو حذف شد چون بک‌اند فعلی هیچ
+// endpoint ای برایش ندارد. اگر بعداً اضافه شد، این تابع و آیتم منو را برگردانید.
+const passwordResetNotSupported = () => {
+  toast.add({
+    title: 'این قابلیت هنوز در بک‌اند پشتیبانی نمی‌شود',
+    description: 'برای فعال شدن، نیاز به افزودن endpoint تغییر رمز عبور در سرور است.',
+    color: 'warning'
+  })
 }
 
 onMounted(async () => {
@@ -384,9 +360,10 @@ onMounted(async () => {
                             onSelect: () => openEditModal(item)
                           },
                           {
-                            label: 'تغییر رمز عبور',
+                            label: 'تغییر رمز عبور (غیرفعال)',
                             icon: 'i-lucide-key',
-                            onSelect: () => openPasswordModal(item)
+                            disabled: true,
+                            onSelect: () => passwordResetNotSupported()
                           },
                           {
                             label: item.isActive ? 'غیرفعال کردن' : 'فعال کردن',
@@ -456,19 +433,13 @@ onMounted(async () => {
         </UCard>
       </div>
 
-      <!-- مودال‌ها -->
+      <!-- مودال فرم -->
       <UserFormModal
         v-model:open="formModalOpen"
         :editing-id="editingUser?.id || null"
         :initial-data="editingUser || undefined"
         :roles="roles"
         @save="handleSave"
-      />
-
-      <UserPasswordModal
-        v-model:open="passwordModalOpen"
-        :user-name="selectedUserForPassword?.fullName || ''"
-        @save="handleResetPassword"
       />
     </div>
   </ClientOnly>

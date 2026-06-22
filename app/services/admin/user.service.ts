@@ -2,15 +2,16 @@
 import type { User, CreateUserInput, UpdateUserInput, UserRole } from '~/types/user'
 import type { GridDataSourceResult } from '~/types/grid'
 
-// شکل دقیق درخواست لیست کاربران - UserListFilterDto در بک‌اند
-// توجه: این کنترلر برخلاف بقیه‌ی گرید‌ها، فیلترها را از inputParams.filters نمی‌خواند،
-// بلکه searchTerm / isActive / isLockedOut / role را به صورت فیلدهای مستقیم می‌خواند.
+// شکل دقیق بدنه‌ی درخواست لیست کاربران - باید با UserListFilterDto در بک‌اند یکی باشد.
+// توجه: AdminUserManagementController برخلاف بقیه‌ی گریدهای پروژه، فیلتر را از
+// inputParams.filters نمی‌خواند؛ بلکه searchTerm/isActive/isLockedOut/role را به صورت
+// فیلد مستقیم در بدنه‌ی JSON می‌خواند.
 export interface UserListRequest {
   page: number
   pageSize: number
   inputParams?: {
     filters: never[]
-    sort: { propertyName: string; ascending: boolean } | null
+    sort: null
   }
   searchTerm?: string | null
   isActive?: boolean | null
@@ -21,8 +22,10 @@ export interface UserListRequest {
 export const useAdminUserService = () => {
   const { $api } = useNuxtApp()
 
-  // توجه مهم: AdminUserManagementController از ApiResponse<T> استفاده نمی‌کند،
-  // بلکه مستقیماً Ok(dto) برمی‌گرداند. بنابراین response.data خودِ DTO است، نه { data: DTO }.
+  // نکته‌ی مهم: AdminUserManagementController از ApiResponse<T> استفاده نمی‌کند و
+  // مستقیماً Ok(dto) برمی‌گرداند. یعنی response.data همان DTO است، نه { data: DTO }.
+  // (برای GetList این به‌طور تصادفی کار می‌کرد چون GridDataSourceResult خودش هم یک
+  // فیلد data دارد، اما برای create/update/getById کاملاً اشتباه بود.)
 
   const getUsersList = async (request: UserListRequest): Promise<GridDataSourceResult<User>> => {
     const response = await $api.post<GridDataSourceResult<User>>('panel/admin/users/list', request)
@@ -52,15 +55,16 @@ export const useAdminUserService = () => {
     await $api.patch(`panel/admin/users/${userId}/toggle-active`)
   }
 
-  // نکته: بدنه باید { newPassword } باشد (نه { password })، چون بک‌اند ResetPasswordRequestBody.NewPassword را می‌خواند
-  const resetUserPassword = async (userId: number, newPassword: string): Promise<void> => {
-    await $api.post(`panel/admin/users/${userId}/reset-password`, { newPassword })
-  }
-
   const getRoles = async (): Promise<UserRole[]> => {
     const response = await $api.get<UserRole[]>('panel/admin/users/roles')
     return response.data
   }
+
+  // عمداً حذف شد: resetUserPassword
+  // دلیل: بک‌اند فعلی هیچ endpoint ای برای تغییر رمز عبور کاربر موجود ندارد
+  // (نه در UserCoreService و نه در AdminUserManagementController).
+  // UpdateUserInputDto هم فیلد رمز عبور ندارد. اضافه کردن این قابلیت نیازمند
+  // تغییر بک‌اند است که طبق تصمیم فعلی، فعلاً انجام نمی‌شود.
 
   return {
     getUsersList,
@@ -69,7 +73,6 @@ export const useAdminUserService = () => {
     updateUser,
     deleteUser,
     toggleUserActive,
-    resetUserPassword,
     getRoles
   }
 }
