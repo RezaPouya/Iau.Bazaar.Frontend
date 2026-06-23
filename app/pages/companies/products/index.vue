@@ -84,7 +84,7 @@ const loadCategories = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    categories.value = response.data.data?.map((c: any) => ({ id: c.id, name: c.name, priority: c.priority })) || []
+    categories.value = response.data.data?.data?.map((c: any) => ({ id: c.id, name: c.name, priority: c.priority })) || []
   } catch (error) {
     console.error('Error loading categories:', error)
   }
@@ -686,3 +686,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

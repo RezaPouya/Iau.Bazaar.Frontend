@@ -29,6 +29,7 @@ const saving = ref(false)
 const fetchGrowthCenter = async () => {
   try {
     const response = await $api.get(`panel/admin/growth-centers/${growthCenterId.value}`)
+    // این الگوی fallback از قبل با هر دو حالت (پاسخ wrap‌شده یا خام) کار می‌کند، دست نخورده باقی ماند
     const data = response.data.data || response.data
     form.title = data.title
     form.description = data.description || ''
@@ -50,7 +51,8 @@ const fetchUniversities = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    universities.value = response.data.data?.map((u: any) => ({ id: u.id, title: u.title })) || []
+    // AdminUniversitiesController.GetList اکنون ApiResponse<GridDataSourceResult<T>> برمی‌گرداند
+    universities.value = response.data.data?.data?.map((u: any) => ({ id: u.id, title: u.title })) || []
   } catch (error) {
     console.error('خطا در دریافت دانشگاه‌ها', error)
   }

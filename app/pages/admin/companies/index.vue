@@ -32,8 +32,10 @@ const fetchGrowthCenters = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
+    // پاسخ این endpoint اکنون ApiResponse<GridDataSourceResult<T>> است:
+    // response.data = ApiResponse، response.data.data = GridDataSourceResult، response.data.data.data = آرایه واقعی
     growthCenters.value =
-      response.data.data?.map((gc: any) => ({
+      response.data.data?.data?.map((gc: any) => ({
         id: gc.id,
         title: gc.title,
         universityName: gc.universityName
@@ -103,7 +105,9 @@ const loadData = async () => {
     }
 
     const response = await $api.post('panel/admin/companies/list', request)
-    const result = response.data
+    // نکته: پاسخ بک‌اند اکنون ApiResponse<GridDataSourceResult<CompanyDto>> است.
+    // response.data = ApiResponse، response.data.data = GridDataSourceResult واقعی.
+    const result = response.data.data
     data.value = result.data ?? []
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1

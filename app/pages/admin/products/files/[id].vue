@@ -28,7 +28,7 @@ const activeTab = ref<'files' | 'legal'>('files')
 const fetchProductInfo = async () => {
   try {
     const response = await $api.get(`panel/admin/products/${productId.value}`)
-    productTitle.value = response.data.data?.title || `محصول ${productId.value}`
+    productTitle.value = response.data.data?.data?.title || `محصول ${productId.value}`
   } catch (error) {
     console.error('خطا در دریافت اطلاعات محصول', error)
   }
@@ -118,7 +118,7 @@ const loadFiles = async () => {
     }
 
     const response = await $api.post(`panel/admin/product-files/${productId.value}/list`, request)
-    const result = response.data
+    const result = response.data.data
     fileData.value = result.data ?? []
     fileTotals.value = result.totals ?? 0
     fileCurrentPage.value = result.page ?? 1
@@ -153,7 +153,7 @@ const loadLegalDocuments = async () => {
     }
 
     const response = await $api.post(`panel/admin/product-files/${productId.value}/legal/list`, request)
-    const result = response.data
+    const result = response.data.data
     legalData.value = result.data ?? []
     legalTotals.value = result.totals ?? 0
     legalCurrentPage.value = result.page ?? 1
@@ -551,3 +551,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

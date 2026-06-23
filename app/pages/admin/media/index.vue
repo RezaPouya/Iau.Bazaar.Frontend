@@ -105,7 +105,7 @@ const loadImages = async () => {
     }
 
     const response = await $api.post('panel/admin/media/images/list', request)
-    const result = response.data
+    const result = response.data.data
     imageData.value = result.data ?? []
     imageTotals.value = result.totals ?? 0
     imageCurrentPage.value = result.page ?? 1
@@ -293,7 +293,7 @@ const loadVideos = async () => {
     }
 
     const response = await $api.post('panel/admin/media/videos/list', request)
-    const result = response.data
+    const result = response.data.data
     videoData.value = result.data ?? []
     videoTotals.value = result.totals ?? 0
     videoCurrentPage.value = result.page ?? 1
@@ -697,3 +697,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

@@ -63,7 +63,7 @@ const loadCompanies = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    companies.value = response.data.data?.map((c: any) => ({ id: c.id, title: c.title })) || []
+    companies.value = response.data.data?.data?.map((c: any) => ({ id: c.id, title: c.title })) || []
   } catch (error) {
     console.error('خطا در دریافت شرکت‌ها', error)
   }
@@ -77,7 +77,7 @@ const loadCategories = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    categories.value = response.data.data?.map((c: any) => ({ id: c.id, name: c.name, priority: c.priority })) || []
+    categories.value = response.data.data?.data?.map((c: any) => ({ id: c.id, name: c.name, priority: c.priority })) || []
   } catch (error) {
     console.error('خطا در دریافت دسته‌بندی‌ها', error)
   }
@@ -154,7 +154,7 @@ const loadData = async () => {
     }
 
     const response = await $api.post('panel/admin/products/list', request)
-    const result = response.data
+    const result = response.data.data
     data.value = result.data ?? []
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1
@@ -357,3 +357,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

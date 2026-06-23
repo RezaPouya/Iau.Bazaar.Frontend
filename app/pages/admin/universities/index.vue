@@ -98,7 +98,7 @@ const loadData = async () => {
       }
     }
     const response = await $api.post('panel/admin/universities/list', request)
-    const result = response.data
+    const result = response.data.data
     data.value = result.data ?? []
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1
@@ -430,3 +430,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

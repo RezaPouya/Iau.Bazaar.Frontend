@@ -44,8 +44,10 @@ const loadUsers = async () => {
       }
     }
 
-    const response = await $api.post(`/api/admin/companies/${props.companyId}/users/list`, request)
-    const result = response.data
+    // نکته: مسیر درست panel/admin/companies است (نه admin/companies) - با AdminCompanyManagementController یکی است
+    const response = await $api.post(`panel/admin/companies/${props.companyId}/users/list`, request)
+    // پاسخ اکنون ApiResponse<GridDataSourceResult<CompanyUserDto>> است
+    const result = response.data.data
     users.value = result.data ?? []
     totals.value = result.totals ?? 0
     totalPages.value = result.totalPages ?? 0
@@ -64,7 +66,7 @@ const addUser = async () => {
 
   addingUser.value = true
   try {
-    await $api.post(`/api/admin/companies/${props.companyId}/users/add/${userIdToAdd.value}`)
+    await $api.post(`panel/admin/companies/${props.companyId}/users/add/${userIdToAdd.value}`)
     toast.add({ title: 'کاربر با موفقیت اضافه شد', color: 'success' })
     addUserModalOpen.value = false
     userIdToAdd.value = null
@@ -84,7 +86,7 @@ const removeUser = async (userId: number) => {
   if (!props.companyId) return
 
   try {
-    await $api.delete(`/api/admin/companies/${props.companyId}/users/${userId}`)
+    await $api.delete(`panel/admin/companies/${props.companyId}/users/${userId}`)
     toast.add({ title: 'کاربر با موفقیت حذف شد', color: 'success' })
     await loadUsers()
   } catch (error: any) {
@@ -97,7 +99,7 @@ const toggleUserActive = async (userId: number, isActive: boolean) => {
   if (!props.companyId) return
 
   try {
-    await $api.patch(`/api/admin/companies/${props.companyId}/users/${userId}/toggle-active`, !isActive)
+    await $api.patch(`panel/admin/companies/${props.companyId}/users/${userId}/toggle-active`, !isActive)
     toast.add({ title: 'وضعیت کاربر با موفقیت تغییر کرد', color: 'success' })
     await loadUsers()
   } catch (error: any) {

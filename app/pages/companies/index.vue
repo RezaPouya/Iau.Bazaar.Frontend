@@ -28,11 +28,18 @@ const pendingProductsList = ref<any[]>([])
 // ========== Load Dashboard Data ==========
 const loadDashboardData = async () => {
   loading.value = true
+
+  // نکته: این endpoint (dashboard/stats) در بک‌اند فعلی وجود ندارد و همیشه 404 می‌دهد.
+  // به‌صورت جداگانه try/catch شده تا نبود این یک endpoint مانع لود شدن بقیه‌ی ویجت‌های
+  // داشبورد (که endpoint واقعی دارند) نشود.
   try {
-    // دریافت آمار
     const statsResponse = await $api.get('/api/company/dashboard/stats')
     stats.value = statsResponse.data.data
+  } catch (error) {
+    console.error('Error loading dashboard stats (endpoint not implemented yet):', error)
+  }
 
+  try {
     // دریافت سفارشات اخیر
     const ordersResponse = await $api.post('/api/company/orders/list', {
       page: 1,
@@ -42,7 +49,9 @@ const loadDashboardData = async () => {
         sort: { propertyName: 'orderDate', ascending: false }
       }
     })
-    recentOrders.value = ordersResponse.data.data ?? []
+    // پاسخ اکنون ApiResponse<GridDataSourceResult<OrderSummaryDto>> است.
+    // ordersResponse.data = ApiResponse، ordersResponse.data.data = GridDataSourceResult، ...data.data.data = آرایه واقعی
+    recentOrders.value = ordersResponse.data.data?.data ?? []
 
     // دریافت محصولات اخیر
     const productsResponse = await $api.post('/api/company/products/list', {
@@ -53,7 +62,7 @@ const loadDashboardData = async () => {
         sort: { propertyName: 'createdAt', ascending: false }
       }
     })
-    recentProducts.value = productsResponse.data.data ?? []
+    recentProducts.value = productsResponse.data.data?.data ?? []
 
     // دریافت محصولات در انتظار تایید
     const pendingResponse = await $api.post('/api/company/products/list', {
@@ -64,7 +73,7 @@ const loadDashboardData = async () => {
         sort: { propertyName: 'createdAt', ascending: false }
       }
     })
-    pendingProductsList.value = pendingResponse.data.data ?? []
+    pendingProductsList.value = pendingResponse.data.data?.data ?? []
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })

@@ -32,7 +32,8 @@ const fetchUniversities = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    universities.value = response.data.data?.map((u: any) => ({ id: u.id, title: u.title })) || []
+    // AdminUniversitiesController.GetList اکنون ApiResponse<GridDataSourceResult<T>> برمی‌گرداند
+    universities.value = response.data.data?.data?.map((u: any) => ({ id: u.id, title: u.title })) || []
   } catch (error) {
     console.error('خطا در دریافت دانشگاه‌ها', error)
   }
@@ -98,7 +99,8 @@ const loadData = async () => {
     }
 
     const response = await $api.post('panel/admin/growth-centers/list', request)
-    const result = response.data
+    // AdminGrowthCenterManagementController.GetList اکنون ApiResponse<GridDataSourceResult<T>> برمی‌گرداند
+    const result = response.data.data
     data.value = result.data ?? []
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1

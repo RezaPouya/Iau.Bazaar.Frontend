@@ -26,18 +26,25 @@ const pendingProductsList = ref<any[]>([])
 // ========== Load Dashboard Data ==========
 const loadDashboardData = async () => {
   loading.value = true
+
+  // نکته: این endpoint (dashboard/stats) در بک‌اند فعلی وجود ندارد. جدا try/catch شده
+  // تا نبود این یک endpoint مانع لود شدن ویجت‌های دیگر (که endpoint واقعی دارند) نشود.
   try {
-    // دریافت آمار
     const statsResponse = await $api.get('/api/growth-center/dashboard/stats')
     stats.value = statsResponse.data.data
+  } catch (error) {
+    console.error('Error loading dashboard stats (endpoint not implemented yet):', error)
+  }
 
+  try {
     // دریافت سفارشات اخیر
     const ordersResponse = await $api.post('/api/growth-center/orders/list', {
       page: 1,
       pageSize: 5,
       inputParams: { filters: [], sort: { propertyName: 'orderDate', ascending: false } }
     })
-    recentOrders.value = ordersResponse.data.data ?? []
+    // پاسخ اکنون ApiResponse<GridDataSourceResult<T>> است؛ یک لایه .data بیشتر لازم است
+    recentOrders.value = ordersResponse.data.data?.data ?? []
 
     // دریافت محصولات در انتظار تایید
     const productsResponse = await $api.post('/api/growth-center/products/list', {
@@ -48,7 +55,7 @@ const loadDashboardData = async () => {
         sort: { propertyName: 'createdAt', ascending: false }
       }
     })
-    pendingProductsList.value = productsResponse.data.data ?? []
+    pendingProductsList.value = productsResponse.data.data?.data ?? []
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })
@@ -226,3 +233,5 @@ onMounted(() => {
     </div>
   </ClientOnly>
 </template>
+
+
