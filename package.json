@@ -17,6 +17,7 @@
     "@iconify-json/simple-icons": "^1.2.83",
     "@internationalized/date": "^3.12.1",
     "@lucide/vue": "^1.17.0",
+    "@nuxt/image": "^2.0.0",
     "@nuxt/ui": "^4.8.1",
     "@pinia/nuxt": "^0.11.3",
     "@tailwindcss/vite": "^4.3.0",
