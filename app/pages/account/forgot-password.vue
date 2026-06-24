@@ -2,10 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
-definePageMeta({
-  layout: 'default',
-  middleware: 'guest'
-})
+definePageMeta({ middleware: 'guest', layout: 'account' })
 
 const { $api } = useNuxtApp()
 const toast = useToast()

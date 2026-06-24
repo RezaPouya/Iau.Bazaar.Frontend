@@ -85,13 +85,16 @@
         <div class="text-center text-sm mt-4">
           <NuxtLink to="/forgot-password" class="text-primary-600 hover:underline"> رمز عبور خود را فراموش کرده‌اید؟ </NuxtLink>
         </div>
+        <div class="text-center mt-4 text-sm">
+          قبلاً ثبت نام نکرده اید؟ <NuxtLink to="/account/register" class="text-primary-600">ثبت نام کنید</NuxtLink>
+        </div>
       </UForm>
     </UCard>
   </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'guest' })
+definePageMeta({ middleware: 'guest', layout: 'account' })
 
 const { $api } = useNuxtApp()
 const authStore = useAuthStore()

@@ -64,8 +64,6 @@ const navigation = [
     icon: 'i-lucide-messages-square',
     to: '/admin/contact-us-messages'
   }
-
-
 ]
 
 // User dropdown items
