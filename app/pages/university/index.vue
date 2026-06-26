@@ -1,5 +1,7 @@
 <!-- app/pages/university/index.vue -->
 <script setup lang="ts">
+import { useUniversityService } from '~/services/university/university.service'
+
 definePageMeta({
   layout: 'university',
   middleware: 'university',
@@ -9,6 +11,7 @@ definePageMeta({
 const auth = useAuthStore()
 const { $api } = useNuxtApp()
 const toast = useToast()
+const { getGrowthCentersList, getCompaniesList } = useUniversityService()
 
 // ========== State ==========
 const stats = ref({
@@ -27,32 +30,35 @@ const recentProducts = ref<any[]>([])
 const loadDashboardData = async () => {
   loading.value = true
 
-  // نکته: این endpoint (dashboard/stats) در بک‌اند فعلی وجود ندارد. جدا try/catch شده
-  // تا نبود این یک endpoint مانع لود شدن ویجت‌های دیگر (که endpoint واقعی دارند) نشود.
-  try {
-    const statsResponse = await $api.get('/api/university/dashboard/stats')
-    stats.value = statsResponse.data.data
-  } catch (error) {
-    console.error('Error loading dashboard stats (endpoint not implemented yet):', error)
-  }
-
   try {
     // دریافت سفارشات اخیر
-    const ordersResponse = await $api.post('/api/university/orders/list', {
+    const ordersResponse = await $api.post('university/orders/list', {
       page: 1,
       pageSize: 5,
       inputParams: { filters: [], sort: { propertyName: 'orderDate', ascending: false } }
     })
     // پاسخ اکنون ApiResponse<GridDataSourceResult<T>> است؛ یک لایه .data بیشتر لازم است
     recentOrders.value = ordersResponse.data.data?.data ?? []
+    stats.value.totalOrders = ordersResponse.data.data?.totals ?? 0
 
     // دریافت محصولات اخیر
-    const productsResponse = await $api.post('/api/university/products/list', {
+    const productsResponse = await $api.post('university/products/list', {
       page: 1,
       pageSize: 5,
       inputParams: { filters: [], sort: { propertyName: 'createdAt', ascending: false } }
     })
     recentProducts.value = productsResponse.data.data?.data ?? []
+    stats.value.totalProducts = productsResponse.data.data?.totals ?? 0
+
+    // تعداد مراکز رشد و شرکت‌ها: یک endpoint اختصاصی «آمار» در بک‌اند وجود ندارد، اما
+    // می‌توان تعداد دقیق را از فیلد totals همان لیست‌های موجود گرفت (pageSize کوچک
+    // چون فقط به totals نیاز داریم، نه به خود رکوردها)
+    const [growthCentersResult, companiesResult] = await Promise.all([
+      getGrowthCentersList({ page: 1, pageSize: 1, inputParams: { filters: [], sort: null } }),
+      getCompaniesList({ page: 1, pageSize: 1, inputParams: { filters: [], sort: null } })
+    ])
+    stats.value.totalGrowthCenters = growthCentersResult.totals
+    stats.value.totalCompanies = companiesResult.totals
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })
@@ -215,5 +221,7 @@ onMounted(() => {
     </div>
   </ClientOnly>
 </template>
+
+
 
 

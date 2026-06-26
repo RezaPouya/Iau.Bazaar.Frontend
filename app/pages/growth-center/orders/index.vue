@@ -169,9 +169,9 @@ const viewInvoice = async (orderId: number) => {
   invoiceLoading.value = true
   invoiceModalOpen.value = true
   try {
-    const { $api } = useNuxtApp()
-    const response = await $api.get(`/api/growth-center/orders/${orderId}/invoice`)
-    selectedInvoice.value = response.data.data
+    // نکته: این endpoint قبلاً اصلاً در بک‌اند وجود نداشت و مسیر قبلی دارای پیشوند
+    // تکراری «/api» بود. هر دو در همین دور اصلاح شدند.
+    selectedInvoice.value = await growthCenterService.getOrderInvoice(orderId)
   } catch (error: any) {
     toast.add({ title: error.response?.data?.message || 'خطا در دریافت فاکتور', color: 'error' })
     invoiceModalOpen.value = false
@@ -456,3 +456,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

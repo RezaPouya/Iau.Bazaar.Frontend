@@ -11,79 +11,79 @@ export const useUniversityService = () => {
 
   // ========== Growth Centers ==========
   const getGrowthCentersList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<GrowthCenter>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<GrowthCenter>>>('/api/university/growth-centers/list', request)
+    const response = await $api.post<ApiResponse<GridDataSourceResult<GrowthCenter>>>('university/growth-centers/list', request)
     return response.data.data
   }
 
   const getGrowthCenterById = async (id: number): Promise<GrowthCenter> => {
-    const response = await $api.get<ApiResponse<GrowthCenter>>(`/api/university/growth-centers/${id}`)
+    const response = await $api.get<ApiResponse<GrowthCenter>>(`university/growth-centers/${id}`)
     return response.data.data
   }
 
   const createGrowthCenter = async (data: CreateGrowthCenterInput): Promise<GrowthCenter> => {
-    const response = await $api.post<ApiResponse<GrowthCenter>>('/api/university/growth-centers', data)
+    const response = await $api.post<ApiResponse<GrowthCenter>>('university/growth-centers', data)
     return response.data.data
   }
 
   const updateGrowthCenter = async (id: number, data: UpdateGrowthCenterInput): Promise<GrowthCenter> => {
-    const response = await $api.put<ApiResponse<GrowthCenter>>(`/api/university/growth-centers/${id}`, data)
+    const response = await $api.put<ApiResponse<GrowthCenter>>(`university/growth-centers/${id}`, data)
     return response.data.data
   }
 
   const deleteGrowthCenter = async (id: number): Promise<void> => {
-    await $api.delete<ApiResponse<void>>(`/api/university/growth-centers/${id}`)
+    await $api.delete<ApiResponse<void>>(`university/growth-centers/${id}`)
   }
 
   const toggleGrowthCenterActive = async (id: number): Promise<void> => {
-    await $api.patch<ApiResponse<void>>(`/api/university/growth-centers/${id}/toggle-active`)
+    await $api.patch<ApiResponse<void>>(`university/growth-centers/${id}/toggle-active`)
   }
 
   // ========== Growth Center Users ==========
   const getGrowthCenterUsers = async (growthCenterId: number, request: GridDataSourceRequest): Promise<GridDataSourceResult<GrowthCenterUser>> => {
     const response = await $api.post<ApiResponse<GridDataSourceResult<GrowthCenterUser>>>(
-      `/api/university/growth-centers/${growthCenterId}/users/list`,
+      `university/growth-centers/${growthCenterId}/users/list`,
       request
     )
     return response.data.data
   }
 
   const addUserToGrowthCenter = async (growthCenterId: number, userId: number): Promise<void> => {
-    await $api.post<ApiResponse<void>>(`/api/university/growth-centers/${growthCenterId}/users/add/${userId}`)
+    await $api.post<ApiResponse<void>>(`university/growth-centers/${growthCenterId}/users/add/${userId}`)
   }
 
   const removeUserFromGrowthCenter = async (growthCenterId: number, userId: number): Promise<void> => {
-    await $api.delete<ApiResponse<void>>(`/api/university/growth-centers/${growthCenterId}/users/${userId}`)
+    await $api.delete<ApiResponse<void>>(`university/growth-centers/${growthCenterId}/users/${userId}`)
   }
 
   const toggleGrowthCenterUserActive = async (growthCenterId: number, userId: number, isActive: boolean): Promise<void> => {
-    await $api.patch<ApiResponse<void>>(`/api/university/growth-centers/${growthCenterId}/users/${userId}/toggle-active`, isActive)
+    await $api.patch<ApiResponse<void>>(`university/growth-centers/${growthCenterId}/users/${userId}/toggle-active`, isActive)
   }
 
   // ========== Companies (Read-only) ==========
   const getCompaniesList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<Company>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<Company>>>('/api/university/companies/list', request)
+    const response = await $api.post<ApiResponse<GridDataSourceResult<Company>>>('university/companies/list', request)
     return response.data.data
   }
 
   const getCompanyById = async (id: number): Promise<Company> => {
-    const response = await $api.get<ApiResponse<Company>>(`/api/university/companies/${id}`)
+    const response = await $api.get<ApiResponse<Company>>(`university/companies/${id}`)
     return response.data.data
   }
 
   // ========== Products (Read-only) ==========
   const getProductsList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<Product>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<Product>>>('/api/university/products/list', request)
+    const response = await $api.post<ApiResponse<GridDataSourceResult<Product>>>('university/products/list', request)
     return response.data.data
   }
 
   const getProductById = async (id: number): Promise<Product> => {
-    const response = await $api.get<ApiResponse<Product>>(`/api/university/products/${id}`)
+    const response = await $api.get<ApiResponse<Product>>(`university/products/${id}`)
     return response.data.data
   }
 
   // ========== Orders (Read-only) ==========
   const getOrdersList = async (request: GridDataSourceRequest): Promise<GridDataSourceResult<OrderSummary>> => {
-    const response = await $api.post<ApiResponse<GridDataSourceResult<OrderSummary>>>('/api/university/orders/list', request)
+    const response = await $api.post<ApiResponse<GridDataSourceResult<OrderSummary>>>('university/orders/list', request)
     return response.data.data
   }
 
@@ -110,3 +110,5 @@ export const useUniversityService = () => {
     getOrdersList
   }
 }
+
+

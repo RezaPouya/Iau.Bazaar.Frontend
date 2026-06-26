@@ -60,3 +60,30 @@ export interface EnumerationUnit {
   name: string
   symbol: string
 }
+
+/**
+ * این تایپ باید دقیقاً با ProductListFilterDto سمت بک‌اند یکی باشد.
+ * نکته مهم: searchTerm / categoryId / minPrice / maxPrice / hasDiscount / inStock
+ * باید به صورت فیلدهای سطح بالا (top-level) ارسال شوند، نه داخل inputParams.filters
+ * چون ProductCoreService.GetProductsAsync مستقیماً همین Property های strongly-typed
+ * را می‌خواند و آرایه‌ی عمومی filters را برای این فیلدها اصلاً بررسی نمی‌کند.
+ */
+export interface ProductListFilter {
+  page: number
+  pageSize: number
+  searchTerm?: string | null
+  companyId?: number | null
+  state?: number | null
+  approvalStatus?: number | null
+  categoryId?: number | null
+  minPrice?: number | null
+  maxPrice?: number | null
+  hasDiscount?: boolean | null
+  inStock?: boolean | null
+  inputParams?: {
+    filters: never[]
+    sort: { propertyName: string, ascending: boolean } | null
+  }
+}
+
+

@@ -1,223 +1,99 @@
-<!-- app/pages/company/index.vue -->
 <script setup lang="ts">
+import type { Company } from '~/types/company'
+import { useUniversityService } from '~/services/university/university.service'
+
+// نکته: نسخه‌ی قبلی این صفحه عیناً کپی‌شده‌ی داشبورد داخلی یک شرکت بود (همان فایل
+// pages/companies/index.vue) با layout/middleware اشتباه ('company' به‌جای 'university')
+// که باعث می‌شد کاربر دانشگاه با پیام «دسترسی غیرمجاز» از این صفحه بیرون پرتاب شود.
+// این نسخه یک فهرست واقعی و read-only از شرکت‌های زیرمجموعه‌ی دانشگاه است
+// (مطابق همان محدودیت read-only که در university.service.ts برای Companies وجود دارد).
 definePageMeta({
-  layout: 'company',
-  middleware: 'company',
-  title: 'داشبورد شرکت'
+  layout: 'university',
+  middleware: 'university',
+  title: 'شرکت‌ها'
 })
 
-const auth = useAuthStore()
-const { $api } = useNuxtApp()
-const toast = useToast()
+const route = useRoute()
+const { getCompaniesList } = useUniversityService()
+const toast = useAppToast()
 
-// ========== State ==========
-const stats = ref({
-  totalProducts: 0,
-  totalOrders: 0,
-  pendingProducts: 0,
-  totalRevenue: 0
-})
-
+const companies = ref<Company[]>([])
+const totals = ref(0)
 const loading = ref(false)
-const recentOrders = ref<any[]>([])
-const recentProducts = ref<any[]>([])
 
-// ========== Load Dashboard Data ==========
-const loadDashboardData = async () => {
+const loadCompanies = async () => {
   loading.value = true
-
-  // نکته: این endpoint (dashboard/stats) در بک‌اند فعلی وجود ندارد. جدا try/catch شده
-  // تا نبود این یک endpoint مانع لود شدن ویجت‌های دیگر (که endpoint واقعی دارند) نشود.
   try {
-    const statsResponse = await $api.get('/api/company/dashboard/stats')
-    stats.value = statsResponse.data.data
-  } catch (error) {
-    console.error('Error loading dashboard stats (endpoint not implemented yet):', error)
-  }
-
-  try {
-    // دریافت سفارشات اخیر
-    const ordersResponse = await $api.post('/api/company/orders/list', {
+    const result = await getCompaniesList({
       page: 1,
-      pageSize: 5,
-      inputParams: { filters: [], sort: { propertyName: 'orderDate', ascending: false } }
+      pageSize: 50,
+      inputParams: { filters: [], sort: { propertyName: 'title', ascending: true } }
     })
-    // پاسخ اکنون ApiResponse<GridDataSourceResult<T>> است؛ یک لایه .data بیشتر لازم است
-    recentOrders.value = ordersResponse.data.data?.data ?? []
-
-    // دریافت محصولات اخیر
-    const productsResponse = await $api.post('/api/company/products/list', {
-      page: 1,
-      pageSize: 5,
-      inputParams: { filters: [], sort: { propertyName: 'createdAt', ascending: false } }
-    })
-    recentProducts.value = productsResponse.data.data?.data ?? []
-  } catch (error: any) {
-    console.error('Error loading dashboard:', error)
-    toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })
+    companies.value = result.data
+    totals.value = result.totals
+  } catch (err: any) {
+    toast.error('خطا در دریافت لیست شرکت‌ها', err?.response?.data?.message)
   } finally {
     loading.value = false
   }
 }
 
-// ========== Format Price ==========
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
-}
-
-// ========== Lifecycle ==========
-onMounted(() => {
-  loadDashboardData()
+// اگر از صفحه‌ی «مراکز رشد» با یک growthCenterId مشخص وارد شده باشیم، فقط شرکت‌های
+// همان مرکز رشد را نشان بده (فیلتر سمت کلاینت، چون لیست کلی شرکت‌های دانشگاه معمولاً
+// عدد بزرگی نیست)
+const growthCenterIdFilter = computed(() => route.query.growthCenterId ? Number(route.query.growthCenterId) : null)
+const visibleCompanies = computed(() => {
+  if (!growthCenterIdFilter.value) return companies.value
+  return companies.value.filter(c => c.growthCenterId === growthCenterIdFilter.value)
 })
+
+const formatPercent = (value: number) => `${value}٪`
+
+onMounted(loadCompanies)
+useHead({ title: 'شرکت‌ها' })
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="space-y-6">
-      <!-- Welcome Section -->
-      <div class="bg-gradient-to-l from-primary-600 to-primary-400 dark:from-primary-800 dark:to-primary-600 rounded-lg p-6 text-white">
-        <h1 class="text-2xl font-bold">خوش آمدید، {{ auth.user?.fullName }}</h1>
-        <p class="text-primary-100 mt-1">از اینجا می‌توانید محصولات، مدارک و سفارشات شرکت خود را مدیریت کنید.</p>
+  <div>
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">شرکت‌ها</h1>
+        <p class="text-sm text-dimmed mt-1">{{ visibleCompanies.length }} از {{ totals }} شرکت زیرمجموعه‌ی این دانشگاه</p>
       </div>
-
-      <!-- Stats -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <UCard class="text-center hover:shadow-md transition-shadow">
-          <div class="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400">
-            <UIcon name="i-lucide-box" class="size-6" />
-          </div>
-          <div class="text-2xl font-bold mt-2">{{ stats.totalProducts }}</div>
-          <div class="text-sm text-dimmed">محصولات</div>
-        </UCard>
-
-        <UCard class="text-center hover:shadow-md transition-shadow">
-          <div class="flex items-center justify-center gap-2 text-primary-600 dark:text-primary-400">
-            <UIcon name="i-lucide-shopping-cart" class="size-6" />
-          </div>
-          <div class="text-2xl font-bold mt-2">{{ stats.totalOrders }}</div>
-          <div class="text-sm text-dimmed">سفارشات</div>
-        </UCard>
-
-        <UCard class="text-center hover:shadow-md transition-shadow">
-          <div class="flex items-center justify-center gap-2 text-warning-600 dark:text-warning-400">
-            <UIcon name="i-lucide-clock" class="size-6" />
-          </div>
-          <div class="text-2xl font-bold mt-2">{{ stats.pendingProducts }}</div>
-          <div class="text-sm text-dimmed">در انتظار تایید</div>
-        </UCard>
-
-        <UCard class="text-center hover:shadow-md transition-shadow">
-          <div class="flex items-center justify-center gap-2 text-success-600 dark:text-success-400">
-            <UIcon name="i-lucide-trending-up" class="size-6" />
-          </div>
-          <div class="text-2xl font-bold mt-2">{{ stats.totalRevenue.toLocaleString() }} تومان</div>
-          <div class="text-sm text-dimmed">درآمد کل</div>
-        </UCard>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- Recent Products -->
-        <UCard>
-          <template #header>
-            <div class="flex justify-between items-center">
-              <h3 class="font-semibold">محصولات جدید</h3>
-              <NuxtLink to="/company/products" class="text-sm text-primary-600 hover:underline">
-                مشاهده همه
-              </NuxtLink>
-            </div>
-          </template>
-          <div v-if="loading" class="flex justify-center py-4">
-            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
-          </div>
-          <div v-else-if="recentProducts.length === 0" class="text-center text-dimmed py-4">
-            محصولی یافت نشد
-          </div>
-          <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div v-for="product in recentProducts" :key="product.id" class="py-2 flex justify-between items-center">
-              <div>
-                <div class="font-medium text-sm">{{ product.title }}</div>
-                <div class="text-xs text-dimmed">{{ product.sku }}</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-primary-600">{{ formatPrice(product.finalPrice) }}</span>
-                <UBadge
-                  :color="product.approvalStatus === 1 ? 'success' : product.approvalStatus === 2 ? 'error' : 'warning'"
-                  variant="subtle"
-                  size="sm"
-                >
-                  {{ product.approvalStatusTitle }}
-                </UBadge>
-              </div>
-            </div>
-          </div>
-        </UCard>
-
-        <!-- Recent Orders -->
-        <UCard>
-          <template #header>
-            <div class="flex justify-between items-center">
-              <h3 class="font-semibold">سفارشات اخیر</h3>
-              <NuxtLink to="/company/orders" class="text-sm text-primary-600 hover:underline">
-                مشاهده همه
-              </NuxtLink>
-            </div>
-          </template>
-          <div v-if="loading" class="flex justify-center py-4">
-            <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin" />
-          </div>
-          <div v-else-if="recentOrders.length === 0" class="text-center text-dimmed py-4">
-            سفارشی یافت نشد
-          </div>
-          <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
-            <div v-for="order in recentOrders" :key="order.id" class="py-2 flex justify-between items-center">
-              <div>
-                <div class="font-medium text-sm">#{{ order.orderNumber }}</div>
-                <div class="text-xs text-dimmed">{{ order.orderDate }}</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold">{{ order.totalAmount.toLocaleString() }} تومان</span>
-                <UBadge
-                  :color="
-                    order.status === 1 ? 'warning' :
-                    order.status === 2 ? 'success' :
-                    order.status === 3 ? 'info' :
-                    order.status === 4 ? 'primary' :
-                    'error'
-                  "
-                  variant="subtle"
-                  size="sm"
-                >
-                  {{ order.statusTitle }}
-                </UBadge>
-              </div>
-            </div>
-          </div>
-        </UCard>
-      </div>
-
-      <!-- Quick Actions -->
-      <UCard>
-        <template #header>
-          <h3 class="font-semibold">دسترسی سریع</h3>
-        </template>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <NuxtLink to="/company/products" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <UIcon name="i-lucide-box" class="size-8 text-primary-600 mx-auto" />
-            <div class="text-sm mt-2">مدیریت محصولات</div>
-          </NuxtLink>
-          <NuxtLink to="/company/product-files" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <UIcon name="i-lucide-files" class="size-8 text-primary-600 mx-auto" />
-            <div class="text-sm mt-2">مدیریت مدارک</div>
-          </NuxtLink>
-          <NuxtLink to="/company/orders" class="p-4 text-center border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <UIcon name="i-lucide-shopping-cart" class="size-8 text-primary-600 mx-auto" />
-            <div class="text-sm mt-2">مشاهده سفارشات</div>
-          </NuxtLink>
-        </div>
-      </UCard>
+      <UButton v-if="growthCenterIdFilter" size="sm" color="neutral" variant="ghost" to="/university/companies">
+        حذف فیلتر مرکز رشد
+      </UButton>
     </div>
-  </ClientOnly>
+
+    <UCard>
+      <div v-if="loading" class="flex justify-center py-10">
+        <UIcon name="i-lucide-loader-circle" class="size-6 animate-spin text-primary-500" />
+      </div>
+      <div v-else-if="visibleCompanies.length === 0" class="text-center py-10 text-dimmed">
+        شرکتی برای نمایش وجود ندارد
+      </div>
+      <table v-else class="w-full text-sm">
+        <thead>
+          <tr class="text-right text-dimmed border-b border-gray-200 dark:border-gray-700">
+            <th class="py-2 px-2 font-medium">عنوان شرکت</th>
+            <th class="py-2 px-2 font-medium hidden md:table-cell">مرکز رشد</th>
+            <th class="py-2 px-2 font-medium hidden md:table-cell">کمیسیون مرکز رشد</th>
+            <th class="py-2 px-2 font-medium">وضعیت</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          <tr v-for="company in visibleCompanies" :key="company.id">
+            <td class="py-3 px-2 font-medium">{{ company.title }}</td>
+            <td class="py-3 px-2 text-dimmed hidden md:table-cell">{{ company.growthCenterName }}</td>
+            <td class="py-3 px-2 text-dimmed hidden md:table-cell">{{ formatPercent(company.growthCenterCommission) }}</td>
+            <td class="py-3 px-2">
+              <UBadge :color="company.isActive ? 'success' : 'neutral'" variant="subtle" size="sm">
+                {{ company.isActive ? 'فعال' : 'غیرفعال' }}
+              </UBadge>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </UCard>
+  </div>
 </template>
-
-

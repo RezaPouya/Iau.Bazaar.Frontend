@@ -170,10 +170,9 @@ const loadLegalDocuments = async () => {
       }
     }
 
-    // Use the growth center service to get legal documents
-    const { $api } = useNuxtApp()
-    const response = await $api.post(`/api/growth-center/product-files/${selectedProductId.value}/legal/list`, request)
-    const result = response.data.data
+    // نکته: این endpoint قبلاً اصلاً در بک‌اند وجود نداشت و مسیر قبلی هم پیشوند
+    // تکراری «/api» داشت. هر دو در همین دور اصلاح شدند.
+    const result = await growthCenterService.getLegalDocuments(selectedProductId.value, request)
     legalData.value = result.data ?? []
     legalTotals.value = result.totals ?? 0
     legalCurrentPage.value = result.page ?? 1
@@ -576,3 +575,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

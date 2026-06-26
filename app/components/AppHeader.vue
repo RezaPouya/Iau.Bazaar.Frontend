@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import type { CartDto } from '~/types/cart'
+import { useCartService } from '~/services/cart.service'
 
 const auth = useAuthStore()
 const { logout } = useLogout()
 const colorMode = useColorMode()
 const router = useRouter()
+const { getCart } = useCartService()
 
 // دریافت تعداد آیتم‌های سبد خرید (فقط در صورت احراز هویت)
-const { data: cart, refresh } = await useFetch<CartDto>('/api/cart', {
-  key: 'cart-badge',
-  default: () => ({ items: [] }),
-  immediate: auth.isAuthenticated,
-  watch: [auth.isAuthenticated]
-})
+// نکته: نسخه قبلی با useFetch('/api/cart') کار می‌کرد که به بک‌اند واقعی نمی‌رسید
+// (نه baseURL درست را داشت و نه توکن Authorization را ست می‌کرد).
+const cart = ref<{ items: unknown[] }>({ items: [] })
+
+const refreshCart = async () => {
+  if (!auth.isAuthenticated) {
+    cart.value = { items: [] }
+    return
+  }
+  try {
+    cart.value = await getCart()
+  } catch {
+    cart.value = { items: [] }
+  }
+}
+
+await refreshCart()
 
 const cartCount = computed(() => cart.value?.items?.length || 0)
 
@@ -45,10 +57,8 @@ watch(() => router.currentRoute.value.path, () => {
 })
 
 // در صورت تغییر وضعیت احراز هویت، سبد خرید را به‌روز کن
-watch(() => auth.isAuthenticated, (isAuth) => {
-  if (isAuth) {
-    refresh()
-  }
+watch(() => auth.isAuthenticated, () => {
+  refreshCart()
 })
 </script>
 
@@ -187,3 +197,5 @@ watch(() => auth.isAuthenticated, (isAuth) => {
   padding: 0 0.25rem;
 }
 </style>
+
+

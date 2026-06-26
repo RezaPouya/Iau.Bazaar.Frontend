@@ -132,12 +132,10 @@ const viewInvoice = async (orderId: number) => {
   invoiceLoading.value = true
   invoiceModalOpen.value = true
   try {
-    // Use the university service to get invoice details
-    // Note: The service might need to be extended for this
-    // For now, we'll use the admin API endpoint but with university context
-    const { $api } = useNuxtApp()
-    const response = await $api.get(`/api/university/orders/${orderId}/invoice`)
-    selectedInvoice.value = response.data.data
+    // نکته: این endpoint قبلاً اصلاً در بک‌اند وجود نداشت (فقط در یک کامنت به آن
+    // اشاره شده بود) و همچنین مسیر قبلی دارای پیشوند تکراری «/api» بود.
+    // هر دو در همین دور اصلاح شدند: اندپوینت ساخته شد و اینجا از سرویس استفاده می‌شود.
+    selectedInvoice.value = await universityService.getOrderInvoice(orderId)
   } catch (error: any) {
     toast.add({ title: error.response?.data?.message || 'خطا در دریافت فاکتور', color: 'error' })
     invoiceModalOpen.value = false
@@ -405,3 +403,5 @@ tbody {
   vertical-align: top !important;
 }
 </style>
+
+

@@ -29,19 +29,9 @@ const pendingProductsList = ref<any[]>([])
 const loadDashboardData = async () => {
   loading.value = true
 
-  // نکته: این endpoint (dashboard/stats) در بک‌اند فعلی وجود ندارد و همیشه 404 می‌دهد.
-  // به‌صورت جداگانه try/catch شده تا نبود این یک endpoint مانع لود شدن بقیه‌ی ویجت‌های
-  // داشبورد (که endpoint واقعی دارند) نشود.
-  try {
-    const statsResponse = await $api.get('/api/company/dashboard/stats')
-    stats.value = statsResponse.data.data
-  } catch (error) {
-    console.error('Error loading dashboard stats (endpoint not implemented yet):', error)
-  }
-
   try {
     // دریافت سفارشات اخیر
-    const ordersResponse = await $api.post('/api/company/orders/list', {
+    const ordersResponse = await $api.post('company/orders/list', {
       page: 1,
       pageSize: 5,
       inputParams: {
@@ -52,9 +42,10 @@ const loadDashboardData = async () => {
     // پاسخ اکنون ApiResponse<GridDataSourceResult<OrderSummaryDto>> است.
     // ordersResponse.data = ApiResponse، ordersResponse.data.data = GridDataSourceResult، ...data.data.data = آرایه واقعی
     recentOrders.value = ordersResponse.data.data?.data ?? []
+    stats.value.totalOrders = ordersResponse.data.data?.totals ?? 0
 
     // دریافت محصولات اخیر
-    const productsResponse = await $api.post('/api/company/products/list', {
+    const productsResponse = await $api.post('company/products/list', {
       page: 1,
       pageSize: 5,
       inputParams: {
@@ -63,9 +54,10 @@ const loadDashboardData = async () => {
       }
     })
     recentProducts.value = productsResponse.data.data?.data ?? []
+    stats.value.totalProducts = productsResponse.data.data?.totals ?? 0
 
     // دریافت محصولات در انتظار تایید
-    const pendingResponse = await $api.post('/api/company/products/list', {
+    const pendingResponse = await $api.post('company/products/list', {
       page: 1,
       pageSize: 5,
       inputParams: {
@@ -74,6 +66,12 @@ const loadDashboardData = async () => {
       }
     })
     pendingProductsList.value = pendingResponse.data.data?.data ?? []
+    stats.value.pendingProducts = pendingResponse.data.data?.totals ?? 0
+
+    // توجه: «درآمد کل» (totalRevenue) نیاز به یک Endpoint تجمیعی (Aggregate) در بک‌اند دارد
+    // که فعلاً وجود ندارد (مثلاً SUM روی همه‌ی سفارشات شرکت). نمی‌توان آن را به‌درستی از
+    // روی همین ۵ سفارش اخیر تخمین زد، پس فعلاً صفر نمایش داده می‌شود تا عدد گمراه‌کننده
+    // نشان داده نشود.
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })
@@ -283,3 +281,5 @@ onMounted(() => {
     </div>
   </ClientOnly>
 </template>
+
+

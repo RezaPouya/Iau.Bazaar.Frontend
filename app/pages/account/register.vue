@@ -27,7 +27,9 @@ const form = reactive<Partial<FormData>>({})
 const onSubmit = async (event: FormSubmitEvent<FormData>) => {
   loading.value = true
   try {
-    await $api.post('/api/public/auth/register', event.data)
+    // نکته: مسیر قبلی «/api/public/auth/register» به‌خاطر پیشوند تکراری «/api» باعث
+    // می‌شد آدرس نهایی غلط (.../api/api/public/auth/register) شود و ثبت‌نام شکست بخورد.
+    await $api.post('public/auth/register', event.data)
     toast.add({ title: 'ثبت‌نام موفق', description: 'لطفاً وارد شوید.', color: 'success' })
     await navigateTo('/account/login')
   } catch (err: any) {
@@ -74,3 +76,5 @@ const onSubmit = async (event: FormSubmitEvent<FormData>) => {
     </UCard>
   </div>
 </template>
+
+

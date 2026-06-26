@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Product, ProductCategory } from '~/types/product'
-import { GridFilterOperation, type GridPropertyFilter } from '~/types/grid'
+import { useProductService } from '~/services/product.service'
 
 const route = useRoute()
 const router = useRouter()
+const { getProductsList, getCategories } = useProductService()
 
 // State
 const products = ref<Product[]>([])
@@ -22,64 +23,16 @@ const inStock = ref(false)
 const sortBy = ref<'newest' | 'price-asc' | 'price-desc' | 'popular'>('newest')
 
 // دریافت دسته‌بندی‌ها برای فیلتر
-const { data: categories } = await useFetch<ProductCategory[]>('/api/public/categories', {
-  default: () => [],
-  key: 'filter-categories'
-})
+const { data: categories } = await useAsyncData<ProductCategory[]>(
+  'filter-categories',
+  () => getCategories(),
+  { default: () => [] }
+)
 
 // تابع بارگذاری محصولات
 const loadProducts = async () => {
   loading.value = true
   try {
-    const filters: GridPropertyFilter[] = []
-
-    if (searchQuery.value.trim()) {
-      filters.push({
-        propertyName: 'title',
-        operation: GridFilterOperation.Contains,
-        value: searchQuery.value.trim()
-      })
-    }
-
-    if (selectedCategoryId.value) {
-      filters.push({
-        propertyName: 'categoryId',
-        operation: GridFilterOperation.Equals,
-        value: String(selectedCategoryId.value)
-      })
-    }
-
-    if (minPrice.value !== null) {
-      filters.push({
-        propertyName: 'minPrice',
-        operation: GridFilterOperation.GreaterThanOrEqual,
-        value: String(minPrice.value)
-      })
-    }
-    if (maxPrice.value !== null) {
-      filters.push({
-        propertyName: 'maxPrice',
-        operation: GridFilterOperation.LessThanOrEqual,
-        value: String(maxPrice.value)
-      })
-    }
-
-    if (hasDiscount.value) {
-      filters.push({
-        propertyName: 'hasDiscount',
-        operation: GridFilterOperation.BooleanEquals,
-        value: 'true'
-      })
-    }
-
-    if (inStock.value) {
-      filters.push({
-        propertyName: 'inStock',
-        operation: GridFilterOperation.BooleanEquals,
-        value: 'true'
-      })
-    }
-
     // مرتب‌سازی
     let sort = null
     switch (sortBy.value) {
@@ -97,25 +50,30 @@ const loadProducts = async () => {
         break
     }
 
-    const response = await $fetch('/api/public/products/list', {
-      method: 'POST',
-      body: {
-        page: currentPage.value,
-        pageSize: pageSize.value,
-        inputParams: {
-          filters,
-          sort
-        }
-      }
+    // نکته مهم: این فیلدها باید سطح بالا (top-level) ارسال شوند، نه داخل
+    // inputParams.filters. زیرا ProductCoreService.GetProductsAsync سمت بک‌اند
+    // مستقیماً همین Property های strongly-typed را از روی ProductListFilterDto می‌خواند.
+    // نسخه‌ی قبلی این فیلدها را به شکل یک آرایه‌ی فیلتر عمومی ارسال می‌کرد که اصلاً
+    // توسط بک‌اند خوانده نمی‌شد؛ یعنی جستجو/دسته‌بندی/قیمت/تخفیف/موجودی هیچ اثری
+    // روی نتیجه نداشتند (فقط مرتب‌سازی کار می‌کرد).
+    const result = await getProductsList({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      searchTerm: searchQuery.value.trim() || null,
+      categoryId: selectedCategoryId.value,
+      minPrice: minPrice.value,
+      maxPrice: maxPrice.value,
+      hasDiscount: hasDiscount.value || null,
+      inStock: inStock.value || null,
+      inputParams: { filters: [], sort }
     })
 
-    const result = response.data as GridDataSourceResult<Product>
     products.value = result.data
     totals.value = result.totals
     currentPage.value = result.page
     pageSize.value = result.pageSize
   } catch (error) {
-    console.error('Error loading products:', error)
+    console.error('خطا در بارگذاری محصولات:', error)
   } finally {
     loading.value = false
   }
@@ -131,10 +89,9 @@ const setPage = (page: number) => {
 // اعمال فیلترها
 const applyFilters = () => {
   currentPage.value = 1
-  // به‌روزرسانی Query String (اختیاری)
-  const query: any = {}
+  const query: Record<string, string> = {}
   if (searchQuery.value) query.q = searchQuery.value
-  if (selectedCategoryId.value) query.categoryId = selectedCategoryId.value
+  if (selectedCategoryId.value) query.categoryId = String(selectedCategoryId.value)
   if (hasDiscount.value) query.hasDiscount = 'true'
   router.push({ query })
   loadProducts()
@@ -161,6 +118,8 @@ onMounted(() => {
 
 // محاسبه تعداد صفحات
 const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
+
+useHead({ title: 'محصولات' })
 </script>
 
 <template>
@@ -168,10 +127,13 @@ const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
     <!-- فیلترهای جانبی -->
     <aside class="md:col-span-1 space-y-4">
       <UCard class="sticky top-24">
-        <h3 class="font-bold mb-3">فیلترها</h3>
+        <h3 class="font-bold mb-3 flex items-center gap-2">
+          <UIcon name="i-lucide-sliders-horizontal" class="size-4" />
+          فیلترها
+        </h3>
 
         <UFormField label="جستجو" class="mb-3">
-          <UInput v-model="searchQuery" placeholder="جستجو..." @keyup.enter="applyFilters" />
+          <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="نام محصول..." @keyup.enter="applyFilters" />
         </UFormField>
 
         <UFormField label="دسته‌بندی" class="mb-3">
@@ -181,23 +143,25 @@ const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
           />
         </UFormField>
 
-        <UFormField label="محدوده قیمت" class="mb-3">
+        <UFormField label="محدوده قیمت (تومان)" class="mb-3">
           <div class="flex gap-2">
             <UInput v-model.number="minPrice" type="number" placeholder="از" class="w-1/2" />
             <UInput v-model.number="maxPrice" type="number" placeholder="تا" class="w-1/2" />
           </div>
         </UFormField>
 
-        <UFormField label="تخفیف‌دار" class="mb-2">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm">فقط تخفیف‌دار</span>
           <USwitch v-model="hasDiscount" />
-        </UFormField>
+        </div>
 
-        <UFormField label="فقط موجود" class="mb-3">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm">فقط موجود</span>
           <USwitch v-model="inStock" />
-        </UFormField>
+        </div>
 
         <div class="flex gap-2">
-          <UButton size="sm" @click="applyFilters">اعمال</UButton>
+          <UButton size="sm" block @click="applyFilters">اعمال فیلتر</UButton>
           <UButton size="sm" color="neutral" variant="ghost" @click="resetFilters">پاک کردن</UButton>
         </div>
       </UCard>
@@ -224,16 +188,17 @@ const totalPages = computed(() => Math.ceil(totals.value / pageSize.value))
       <div v-if="loading" class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <ProductCardSkeleton v-for="i in pageSize" :key="i" />
       </div>
-      <div v-else-if="products.length === 0" class="text-center py-10 text-dimmed">
+      <div v-else-if="products.length === 0" class="text-center py-16 text-dimmed border border-dashed rounded-xl">
         <UIcon name="i-lucide-package-open" class="size-12 mx-auto" />
-        <p class="mt-2">محصولی یافت نشد</p>
+        <p class="mt-2">محصولی با این فیلترها یافت نشد</p>
+        <UButton size="sm" variant="ghost" class="mt-2" @click="resetFilters">پاک کردن فیلترها</UButton>
       </div>
       <div v-else class="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <ProductCard v-for="product in products" :key="product.id" :product="product" />
       </div>
 
       <!-- صفحه‌بندی -->
-      <div v-if="totalPages > 1" class="flex justify-center mt-6">
+      <div v-if="totalPages > 1" class="flex justify-center mt-8">
         <UPagination v-model="currentPage" :page-count="pageSize" :total="totals" @update:model-value="setPage" />
       </div>
     </section>
