@@ -1,5 +1,7 @@
 <!-- app/pages/company/index.vue -->
 <script setup lang="ts">
+import { useCompanyService } from '~/services/company/company.service'
+
 definePageMeta({
   layout: 'company',
   middleware: 'company',
@@ -9,6 +11,7 @@ definePageMeta({
 const auth = useAuthStore()
 const { $api } = useNuxtApp()
 const toast = useToast()
+const { getDashboardStats } = useCompanyService()
 
 // ========== State ==========
 const stats = ref({
@@ -30,6 +33,10 @@ const loadDashboardData = async () => {
   loading.value = true
 
   try {
+    // این اندپوینت قبلاً اصلاً در بک‌اند وجود نداشت؛ الان ساخته شده و عدد دقیق
+    // (شامل «درآمد کل» که قبلاً قابل محاسبه نبود) را برمی‌گرداند.
+    stats.value = await getDashboardStats()
+
     // دریافت سفارشات اخیر
     const ordersResponse = await $api.post('company/orders/list', {
       page: 1,
@@ -39,10 +46,7 @@ const loadDashboardData = async () => {
         sort: { propertyName: 'orderDate', ascending: false }
       }
     })
-    // پاسخ اکنون ApiResponse<GridDataSourceResult<OrderSummaryDto>> است.
-    // ordersResponse.data = ApiResponse، ordersResponse.data.data = GridDataSourceResult، ...data.data.data = آرایه واقعی
     recentOrders.value = ordersResponse.data.data?.data ?? []
-    stats.value.totalOrders = ordersResponse.data.data?.totals ?? 0
 
     // دریافت محصولات اخیر
     const productsResponse = await $api.post('company/products/list', {
@@ -54,7 +58,6 @@ const loadDashboardData = async () => {
       }
     })
     recentProducts.value = productsResponse.data.data?.data ?? []
-    stats.value.totalProducts = productsResponse.data.data?.totals ?? 0
 
     // دریافت محصولات در انتظار تایید
     const pendingResponse = await $api.post('company/products/list', {
@@ -66,12 +69,6 @@ const loadDashboardData = async () => {
       }
     })
     pendingProductsList.value = pendingResponse.data.data?.data ?? []
-    stats.value.pendingProducts = pendingResponse.data.data?.totals ?? 0
-
-    // توجه: «درآمد کل» (totalRevenue) نیاز به یک Endpoint تجمیعی (Aggregate) در بک‌اند دارد
-    // که فعلاً وجود ندارد (مثلاً SUM روی همه‌ی سفارشات شرکت). نمی‌توان آن را به‌درستی از
-    // روی همین ۵ سفارش اخیر تخمین زد، پس فعلاً صفر نمایش داده می‌شود تا عدد گمراه‌کننده
-    // نشان داده نشود.
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })

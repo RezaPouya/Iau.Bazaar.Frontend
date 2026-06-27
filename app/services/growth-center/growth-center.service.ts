@@ -6,6 +6,7 @@ import type { Product, ProductApprovalRequest } from '~/types/product'
 import type { ProductFile, ProductLegalDocument } from '~/types/product-file'
 import type { OrderSummary, InvoiceDetail } from '~/types/order'
 import type { User } from '~/types/user'
+import type { GrowthCenterDashboardStats } from '~/types/dashboard'
 
 export const useGrowthCenterService = () => {
   const { $api } = useNuxtApp()
@@ -133,6 +134,11 @@ export const useGrowthCenterService = () => {
     return response.data.data
   }
 
+  const getDashboardStats = async (): Promise<GrowthCenterDashboardStats> => {
+    const response = await $api.get<ApiResponse<GrowthCenterDashboardStats>>('growth-center/dashboard/stats')
+    return response.data.data
+  }
+
   return {
     // Companies
     getCompaniesList,
@@ -160,7 +166,8 @@ export const useGrowthCenterService = () => {
     getLegalDocuments,
     // Orders
     getOrdersList,
-    getOrderInvoice
+    getOrderInvoice,
+    getDashboardStats
   }
 }
 

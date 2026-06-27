@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
@@ -18,27 +17,21 @@ import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
-import { lowlight } from 'lowlight'
+import { createLowlight, common } from 'lowlight'
 import 'highlight.js/styles/github-dark.css'
 
-// Register languages for code highlighting
-import js from 'highlight.js/lib/languages/javascript'
-import html from 'highlight.js/lib/languages/xml'
-import css from 'highlight.js/lib/languages/css'
-import json from 'highlight.js/lib/languages/json'
-import bash from 'highlight.js/lib/languages/bash'
-import python from 'highlight.js/lib/languages/python'
-import ts from 'highlight.js/lib/languages/typescript'
-
-lowlight.registerLanguage('js', js)
-lowlight.registerLanguage('javascript', js)
-lowlight.registerLanguage('ts', ts)
-lowlight.registerLanguage('typescript', ts)
-lowlight.registerLanguage('html', html)
-lowlight.registerLanguage('css', css)
-lowlight.registerLanguage('json', json)
-lowlight.registerLanguage('bash', bash)
-lowlight.registerLanguage('python', python)
+// نکته مهم (این بخش علت اصلی کار نکردن ادیتور بود):
+// در نسخه‌های قدیمی lowlight یک نمونه‌ی سراسری به نام «lowlight» export می‌شد که
+// متد .registerLanguage(name, fn) داشت. در lowlight نسخه ۳ (که در package.json این
+// پروژه نصب است) این API کاملاً حذف شده و به‌جایش باید با createLowlight() یک نمونه
+// ساخت و با .register({name: fn}) زبان‌ها را ثبت کرد. کد قبلی هنوز از API قدیمی
+// استفاده می‌کرد، یعنی `lowlight` مقدار `undefined` بود و همان لحظه‌ی بارگذاری
+// کامپوننت (قبل از mount شدن) با خطای "Cannot read properties of undefined" کرش
+// می‌کرد — به همین دلیل ادیتور اصلاً کار نمی‌کرد، نه فقط ناقص بود.
+// «common» مجموعه‌ای از ۳۷ زبان پرکاربرد (از جمله javascript, typescript, html/xml,
+// css, json, bash/shell, python) را از قبل ثبت‌شده برمی‌گرداند، پس دیگر نیازی به
+// import و ثبت تک‌تک زبان‌ها هم نیست.
+const lowlight = createLowlight(common)
 
 const props = defineProps<{
   modelValue: string
@@ -55,10 +48,18 @@ onMounted(() => {
   editor.value = new Editor({
     content: props.modelValue || '',
     extensions: [
+      // نکته مهم دوم: از Tiptap نسخه ۳ به بعد، StarterKit خودش به‌صورت پیش‌فرض
+      // شامل Underline و Link هم می‌شود (که در نسخه‌های قبلی جدا اضافه می‌شدند).
+      // اگر اینجا دوباره به‌صورت جدا اضافه شوند، یک تعارض «افزونه‌ی تکراری» ایجاد
+      // می‌شود (Tiptap هشدار می‌دهد و تنظیمات سفارشی روی Link از بین می‌رود).
+      // به همین خاطر نسخه‌ی داخلی StarterKit غیرفعال شده و فقط نسخه‌ی پیکربندی‌شده‌ی
+      // پایین (با openOnClick: false و target=_blank) استفاده می‌شود. Underline دیگر
+      // جدا اضافه نمی‌شود چون نسخه‌ی پیش‌فرض StarterKit برایش کافی است.
       StarterKit.configure({
-        codeBlock: false // handled by CodeBlockLowlight
+        codeBlock: false, // به‌جایش CodeBlockLowlight استفاده می‌شود
+        link: false // به‌جایش نسخه‌ی پیکربندی‌شده‌ی پایین (با تنظیمات دلخواه) استفاده می‌شود
+        // توجه: underline دیگر جدا اضافه نشده چون نسخه‌ی پیش‌فرض همین StarterKit کافی است
       }),
-      Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph']
       }),
@@ -122,8 +123,71 @@ watch(
   }
 )
 
-// Helper: add image via URL
-const addImage = () => {
+// ---------- آپلود تصویر ----------
+// نکته: نسخه قبلی فقط با window.prompt آدرس تصویر می‌گرفت. الان امکان انتخاب فایل
+// از روی دستگاه هم اضافه شده (با فشرده‌سازی سمت کلاینت قبل از تبدیل به base64، تا
+// حجم HTML توضیحات محصول در دیتابیس بیش از حد بزرگ نشود).
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const MAX_IMAGE_WIDTH = 1280
+const MAX_IMAGE_BYTES_BEFORE_COMPRESS = 150 * 1024 // 150KB
+
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image()
+    const reader = new FileReader()
+    reader.onload = () => {
+      img.onload = () => {
+        // اگر فایل کوچک است و نیازی به تغییر اندازه نیست، همان base64 اصلی را برگردان
+        if (file.size <= MAX_IMAGE_BYTES_BEFORE_COMPRESS && img.width <= MAX_IMAGE_WIDTH) {
+          resolve(reader.result as string)
+          return
+        }
+        const scale = Math.min(1, MAX_IMAGE_WIDTH / img.width)
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(reader.result as string)
+          return
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.onerror = reject
+      img.src = reader.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+const triggerFileSelect = () => {
+  fileInput.value?.click()
+}
+
+const onFileSelected = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !editor.value) return
+
+  if (!file.type.startsWith('image/')) {
+    window.alert('فقط فایل تصویری مجاز است.')
+    return
+  }
+
+  try {
+    const dataUrl = await compressImage(file)
+    editor.value.chain().focus().setImage({ src: dataUrl }).run()
+  } catch {
+    window.alert('بارگذاری تصویر با خطا مواجه شد.')
+  } finally {
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+// Helper: add image via URL (روش دوم، برای زمانی که تصویر از قبل آنلاین است)
+const addImageByUrl = () => {
   const url = window.prompt('آدرس تصویر را وارد کنید:')
   if (url && editor.value) {
     editor.value.chain().focus().setImage({ src: url }).run()
@@ -376,9 +440,19 @@ const clearFormatting = () => {
       <UButton size="xs" color="neutral" variant="ghost" @click="setLink" :class="{ 'bg-gray-200 dark:bg-gray-700': editor.isActive('link') }">
         <UIcon name="i-lucide-link" />
       </UButton>
-      <UButton size="xs" color="neutral" variant="ghost" @click="addImage">
-        <UIcon name="i-lucide-image" />
-      </UButton>
+      <UDropdownMenu
+        :items="[
+          [
+            { label: 'آپلود از دستگاه', onSelect: triggerFileSelect, icon: 'i-lucide-upload' },
+            { label: 'از طریق آدرس اینترنتی', onSelect: addImageByUrl, icon: 'i-lucide-link' }
+          ]
+        ]"
+      >
+        <UButton size="xs" color="neutral" variant="ghost">
+          <UIcon name="i-lucide-image" />
+        </UButton>
+      </UDropdownMenu>
+      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected">
       <UButton size="xs" color="neutral" variant="ghost" @click="editor.chain().focus().setHorizontalRule().run()">
         <UIcon name="i-lucide-minus" />
       </UButton>
@@ -534,3 +608,5 @@ const clearFormatting = () => {
   font-weight: bold;
 }
 </style>
+
+

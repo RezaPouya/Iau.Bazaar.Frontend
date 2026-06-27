@@ -39,22 +39,30 @@ useHead({ title: 'بازار دانشگاه' })
     <UCarousel
       v-slot="{ item }"
       :items="[
-        { title: 'تخفیف ویژه دانشجویی', subtitle: 'تا ۵۰٪ تخفیف روی محصولات منتخب', gradient: 'from-primary-600 to-primary-400' },
-        { title: 'محصولات جدید', subtitle: 'به‌روزترین محصولات شرکت‌های مستقر در مراکز رشد', gradient: 'from-violet-600 to-indigo-500' }
+        { title: 'تخفیف ویژه دانشجویی', subtitle: 'تا ۵۰٪ تخفیف روی محصولات منتخب شرکت‌های مستقر در مراکز رشد', cta: 'مشاهده تخفیف‌ها', link: '/products?hasDiscount=true' },
+        { title: 'از ایده تا بازار', subtitle: 'محصولات نوآورانه‌ی استارتاپ‌های دانشگاهی، مستقیم از مراکز رشد', cta: 'کاوش در محصولات', link: '/products' }
       ]"
-      class="rounded-2xl overflow-hidden shadow-sm"
+      class="rounded-2xl overflow-hidden shadow-lg"
       arrows
       dots
     >
-      <div
-        class="relative aspect-[21/9] md:aspect-[3/1] w-full flex items-center justify-center text-white text-center px-6 bg-gradient-to-l"
-        :class="item.gradient"
-      >
-        <div>
-          <h2 class="text-2xl md:text-4xl font-bold">{{ item.title }}</h2>
-          <p class="text-sm md:text-lg mt-2 opacity-90">{{ item.subtitle }}</p>
-          <UButton to="/products" color="neutral" variant="solid" class="mt-4 bg-white text-gray-900 hover:bg-gray-100">
-            مشاهده محصولات
+      <div class="relative aspect-[21/9] md:aspect-[3/1] w-full flex items-center overflow-hidden bg-gradient-to-l from-brand-800 via-brand-700 to-brand-500">
+        <!-- نقش زینتی «رشد» — چند شکل ارگانیک محو در پس‌زمینه، الهام‌گرفته از مفهوم
+             «مرکز رشد»، به‌جای یک گرادیان تخت و بی‌هویت -->
+        <svg class="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 280 C 90 180, 60 120, 110 60 C 140 90, 130 140, 150 200" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+          <circle cx="112" cy="55" r="10" fill="white" />
+          <path d="M700 290 C 660 200, 690 150, 650 90 C 625 120, 635 160, 615 210" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" />
+          <circle cx="648" cy="86" r="9" fill="white" />
+          <circle cx="780" cy="40" r="35" fill="white" opacity="0.5" />
+          <circle cx="40" cy="30" r="22" fill="white" opacity="0.4" />
+        </svg>
+
+        <div class="relative z-10 text-white px-8 md:px-16 max-w-xl">
+          <h2 class="text-2xl md:text-4xl font-extrabold">{{ item.title }}</h2>
+          <p class="text-sm md:text-lg mt-3 opacity-90 leading-relaxed">{{ item.subtitle }}</p>
+          <UButton :to="item.link" color="secondary" variant="solid" size="lg" class="mt-5 font-semibold">
+            {{ item.cta }}
           </UButton>
         </div>
       </div>
