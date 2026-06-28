@@ -11,7 +11,7 @@ definePageMeta({
 const auth = useAuthStore()
 const { $api } = useNuxtApp()
 const toast = useToast()
-const { getGrowthCentersList, getCompaniesList } = useUniversityService()
+const { getDashboardStats } = useUniversityService()
 
 // ========== State ==========
 const stats = ref({
@@ -31,15 +31,21 @@ const loadDashboardData = async () => {
   loading.value = true
 
   try {
-    // دریافت سفارشات اخیر
+    // این اندپوینت قبلاً اصلاً در بک‌اند وجود نداشت و عددها از چند درخواست جداگانه
+    // تخمین زده می‌شدند؛ الان مستقیماً از یک اندپوینت دقیق گرفته می‌شود.
+    const dashboardStats = await getDashboardStats()
+    stats.value.totalGrowthCenters = dashboardStats.totalGrowthCenters
+    stats.value.totalCompanies = dashboardStats.totalCompanies
+    stats.value.totalProducts = dashboardStats.totalProducts
+    stats.value.totalOrders = dashboardStats.totalOrders
+
+    // دریافت سفارشات اخیر (برای جدول، نه برای شمارش - شمارش از stats بالا می‌آید)
     const ordersResponse = await $api.post('university/orders/list', {
       page: 1,
       pageSize: 5,
       inputParams: { filters: [], sort: { propertyName: 'orderDate', ascending: false } }
     })
-    // پاسخ اکنون ApiResponse<GridDataSourceResult<T>> است؛ یک لایه .data بیشتر لازم است
     recentOrders.value = ordersResponse.data.data?.data ?? []
-    stats.value.totalOrders = ordersResponse.data.data?.totals ?? 0
 
     // دریافت محصولات اخیر
     const productsResponse = await $api.post('university/products/list', {
@@ -48,17 +54,6 @@ const loadDashboardData = async () => {
       inputParams: { filters: [], sort: { propertyName: 'createdAt', ascending: false } }
     })
     recentProducts.value = productsResponse.data.data?.data ?? []
-    stats.value.totalProducts = productsResponse.data.data?.totals ?? 0
-
-    // تعداد مراکز رشد و شرکت‌ها: یک endpoint اختصاصی «آمار» در بک‌اند وجود ندارد، اما
-    // می‌توان تعداد دقیق را از فیلد totals همان لیست‌های موجود گرفت (pageSize کوچک
-    // چون فقط به totals نیاز داریم، نه به خود رکوردها)
-    const [growthCentersResult, companiesResult] = await Promise.all([
-      getGrowthCentersList({ page: 1, pageSize: 1, inputParams: { filters: [], sort: null } }),
-      getCompaniesList({ page: 1, pageSize: 1, inputParams: { filters: [], sort: null } })
-    ])
-    stats.value.totalGrowthCenters = growthCentersResult.totals
-    stats.value.totalCompanies = companiesResult.totals
   } catch (error: any) {
     console.error('Error loading dashboard:', error)
     toast.add({ title: 'خطا در دریافت اطلاعات داشبورد', color: 'error' })

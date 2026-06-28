@@ -6,7 +6,7 @@ import { useUniversityService } from '~/services/university/university.service'
 
 definePageMeta({
   layout: 'university',
-  middleware: 'auth',
+  middleware: 'university', // اصلاح شد: قبلاً 'auth' بود (هر کاربر لاگین‌کرده، نه فقط دانشگاه)
   title: 'مشاهده سفارشات'
 })
 

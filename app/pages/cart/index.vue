@@ -106,17 +106,18 @@ useHead({ title: 'سبد خرید' })
       <UCard class="mt-6">
         <div class="space-y-2 text-sm">
           <div class="flex justify-between"><span>جمع کل</span><span>{{ formatPrice(cart.subtotal) }}</span></div>
-          <div class="flex justify-between"><span>مالیات بر ارزش افزوده</span><span>{{ formatPrice(cart.taxAmount) }}</span></div>
+          <div class="flex justify-between text-dimmed">
+            <span>مالیات بر ارزش افزوده (شامل قیمت بالا)</span>
+            <span>{{ formatPrice(cart.taxAmount) }}</span>
+          </div>
           <div class="flex justify-between font-bold text-lg border-t border-gray-200 dark:border-gray-700 pt-2">
             <span>قابل پرداخت</span>
             <span class="text-primary-600">{{ formatPrice(cart.totalAmount) }}</span>
           </div>
         </div>
-        <!-- توجه: صفحه‌ی پرداخت/تسویه‌حساب هنوز در پروژه ساخته نشده (خارج از فاز اول).
-             تا زمانی که آن صفحه ساخته شود، این دکمه غیرفعال نمایش داده می‌شود تا
-             به یک مسیر ناموجود لینک نشود. -->
-        <UButton color="primary" block size="lg" class="mt-4" disabled>
-          پرداخت و ثبت سفارش (به‌زودی)
+        <!-- صفحه‌ی تسویه‌حساب (/checkout) الان ساخته شده، پس دکمه فعال شد. -->
+        <UButton color="primary" block size="lg" class="mt-4" to="/checkout">
+          ادامه و تسویه حساب
         </UButton>
       </UCard>
     </div>

@@ -12,6 +12,9 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
+const { sanitize } = useSanitizedHtml()
+const sanitizedDescription = computed(() => sanitize(props.product?.description))
+
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('fa-IR').format(price) + ' تومان'
 }
@@ -122,7 +125,7 @@ const closeModal = () => {
         <!-- Full Description -->
         <div v-if="product.description">
           <div class="text-sm text-dimmed mb-1">توضیحات کامل</div>
-          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg prose prose-sm max-w-none" v-html="product.description" />
+          <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg prose prose-sm max-w-none" v-html="sanitizedDescription" />
         </div>
 
         <!-- Images -->
@@ -154,3 +157,5 @@ const closeModal = () => {
   height: auto;
 }
 </style>
+
+

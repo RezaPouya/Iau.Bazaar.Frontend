@@ -4,7 +4,8 @@ import type { GridDataSourceRequest, GridDataSourceResult } from '~/types/grid'
 import type { GrowthCenter, GrowthCenterUser, CreateGrowthCenterInput, UpdateGrowthCenterInput } from '~/types/growth-center'
 import type { Company } from '~/types/company'
 import type { Product } from '~/types/product'
-import type { OrderSummary } from '~/types/order'
+import type { OrderSummary, InvoiceDetail } from '~/types/order'
+import type { UniversityDashboardStats } from '~/types/dashboard'
 
 export const useUniversityService = () => {
   const { $api } = useNuxtApp()
@@ -87,6 +88,16 @@ export const useUniversityService = () => {
     return response.data.data
   }
 
+  const getOrderInvoice = async (orderId: number): Promise<InvoiceDetail> => {
+    const response = await $api.get<ApiResponse<InvoiceDetail>>(`university/orders/${orderId}/invoice`)
+    return response.data.data
+  }
+
+  const getDashboardStats = async (): Promise<UniversityDashboardStats> => {
+    const response = await $api.get<ApiResponse<UniversityDashboardStats>>('university/dashboard/stats')
+    return response.data.data
+  }
+
   return {
     // Growth Centers
     getGrowthCentersList,
@@ -107,7 +118,9 @@ export const useUniversityService = () => {
     getProductsList,
     getProductById,
     // Orders
-    getOrdersList
+    getOrdersList,
+    getOrderInvoice,
+    getDashboardStats
   }
 }
 

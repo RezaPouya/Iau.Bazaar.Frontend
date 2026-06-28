@@ -50,6 +50,9 @@ const handleAddToCart = async () => {
   }
 }
 
+const { sanitize } = useSanitizedHtml()
+const sanitizedDescription = computed(() => sanitize(product.value?.description))
+
 const discountValidNow = computed(() => {
   if (!product.value?.discountPercent) return false
   const now = new Date()
@@ -115,7 +118,7 @@ const discountValidNow = computed(() => {
         <div class="flex items-baseline gap-2">
           <span class="text-3xl font-bold text-primary-600">{{ formatPrice(product.finalPrice) }}</span>
           <span v-if="discountValidNow" class="text-sm text-gray-400 line-through">{{ formatPrice(product.price) }}</span>
-          <UBadge v-if="discountValidNow" color="error" size="sm">{{ product.discountPercent }}٪ تخفیف</UBadge>
+          <UBadge v-if="discountValidNow" color="secondary" size="sm" class="font-semibold">{{ product.discountPercent }}٪ تخفیف</UBadge>
         </div>
         <div class="text-sm">
           موجودی:
@@ -135,7 +138,7 @@ const discountValidNow = computed(() => {
 
       <div v-if="product.description" class="prose dark:prose-invert max-w-none pt-2 border-t border-gray-100 dark:border-gray-800">
         <h3 class="font-bold mt-4 text-base">توضیحات محصول</h3>
-        <div v-html="product.description" />
+        <div v-html="sanitizedDescription" />
       </div>
     </div>
   </div>

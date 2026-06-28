@@ -7,7 +7,7 @@ import ProductStatusBadge from '~/components/admin/product/ProductStatusBadge.vu
 
 definePageMeta({
   layout: 'university',
-  middleware: 'auth',
+  middleware: 'university', // اصلاح شد: قبلاً 'auth' بود (هر کاربر لاگین‌کرده، نه فقط دانشگاه)
   title: 'مشاهده محصولات'
 })
 
@@ -40,6 +40,8 @@ const categories = ref<ProductCategory[]>([])
 // Modal states
 const previewModalOpen = ref(false)
 const selectedProduct = ref<Product | null>(null)
+const { sanitize } = useSanitizedHtml()
+const sanitizedSelectedDescription = computed(() => sanitize(selectedProduct.value?.description))
 
 // ========== Columns ==========
 const columns = [
@@ -513,7 +515,7 @@ onMounted(async () => {
             <!-- Full Description -->
             <div v-if="selectedProduct.description">
               <div class="text-sm text-dimmed mb-1">توضیحات کامل</div>
-              <div class="prose prose-sm max-w-none bg-gray-50 dark:bg-gray-800 p-3 rounded-lg" v-html="selectedProduct.description" />
+              <div class="prose prose-sm max-w-none bg-gray-50 dark:bg-gray-800 p-3 rounded-lg" v-html="sanitizedSelectedDescription" />
             </div>
 
             <!-- Images -->
@@ -570,3 +572,5 @@ tbody {
   height: auto;
 }
 </style>
+
+

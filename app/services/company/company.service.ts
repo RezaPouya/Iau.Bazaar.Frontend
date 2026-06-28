@@ -4,6 +4,7 @@ import type { GridDataSourceRequest, GridDataSourceResult } from '~/types/grid'
 import type { Product, CreateProductInput, UpdateProductInput, ProductImage } from '~/types/product'
 import type { ProductFile, ProductLegalDocument } from '~/types/product-file'
 import type { OrderSummary, InvoiceDetail } from '~/types/order'
+import type { CompanyDashboardStats } from '~/types/dashboard'
 
 export const useCompanyService = () => {
   const { $api } = useNuxtApp()
@@ -136,6 +137,11 @@ export const useCompanyService = () => {
     return response.data.data
   }
 
+  const getDashboardStats = async (): Promise<CompanyDashboardStats> => {
+    const response = await $api.get<ApiResponse<CompanyDashboardStats>>('company/dashboard/stats')
+    return response.data.data
+  }
+
   return {
     // Products
     getProductsList,
@@ -164,7 +170,8 @@ export const useCompanyService = () => {
     deleteLegalDocument,
     // Orders
     getOrdersList,
-    getOrderInvoice
+    getOrderInvoice,
+    getDashboardStats
   }
 }
 

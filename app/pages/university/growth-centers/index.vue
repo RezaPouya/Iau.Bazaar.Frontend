@@ -10,15 +10,18 @@ import { useUniversityService } from '~/services/university/university.service'
 //   ۲) حتی اگر دسترسی هم می‌داشت، API هایی که صدا می‌زد (سفارشات/محصولات مرکز رشد)
 //      برای نقش دانشگاه معنا/مجوز نداشت.
 // این نسخه به یک صفحه‌ی واقعی «فهرست مراکز رشد زیرمجموعه‌ی دانشگاه» تبدیل شده که از
-// university.service.ts (که در این دور اصلاح شد) استفاده می‌کند.
+// university.service.ts استفاده می‌کند، و الان فرم ایجاد/ویرایش هم دارد (قبلاً اصلاً
+// ساخته نشده بود، چون فرانت‌اند راهی برای دانستن شناسه‌ی دانشگاه کاربر فعلی نداشت —
+// این مشکل با افزودن universityId به پاسخ ورود (Login) برطرف شد).
 definePageMeta({
   layout: 'university',
   middleware: 'university',
   title: 'مراکز رشد'
 })
 
-const { getGrowthCentersList, toggleGrowthCenterActive } = useUniversityService()
+const { getGrowthCentersList, toggleGrowthCenterActive, createGrowthCenter, updateGrowthCenter } = useUniversityService()
 const toast = useAppToast()
+const auth = useAuthStore()
 
 const growthCenters = ref<GrowthCenter[]>([])
 const totals = ref(0)
@@ -55,6 +58,70 @@ const onToggleActive = async (gc: GrowthCenter) => {
   }
 }
 
+// ---------- فرم ایجاد/ویرایش ----------
+const modalOpen = ref(false)
+const saving = ref(false)
+const editingId = ref<number | null>(null)
+const form = reactive({
+  title: '',
+  description: '',
+  isActive: true
+})
+
+const openCreateModal = () => {
+  editingId.value = null
+  form.title = ''
+  form.description = ''
+  form.isActive = true
+  modalOpen.value = true
+}
+
+const openEditModal = (gc: GrowthCenter) => {
+  editingId.value = gc.id
+  form.title = gc.title
+  form.description = gc.description ?? ''
+  form.isActive = gc.isActive
+  modalOpen.value = true
+}
+
+const saveGrowthCenter = async () => {
+  if (!form.title.trim()) {
+    toast.error('خطا', 'عنوان مرکز رشد الزامی است')
+    return
+  }
+  if (!auth.user?.universityId && !editingId.value) {
+    toast.error('خطا', 'شناسه دانشگاه شما یافت نشد. لطفاً دوباره وارد شوید.')
+    return
+  }
+
+  saving.value = true
+  try {
+    if (editingId.value) {
+      await updateGrowthCenter(editingId.value, {
+        title: form.title.trim(),
+        description: form.description,
+        universityId: auth.user!.universityId!,
+        isActive: form.isActive
+      })
+      toast.success('مرکز رشد ویرایش شد')
+    } else {
+      await createGrowthCenter({
+        title: form.title.trim(),
+        description: form.description,
+        universityId: auth.user!.universityId!,
+        isActive: form.isActive
+      })
+      toast.success('مرکز رشد جدید ایجاد شد')
+    }
+    modalOpen.value = false
+    await loadGrowthCenters()
+  } catch (err: any) {
+    toast.error('خطا', err?.response?.data?.message || 'ذخیره با خطا مواجه شد')
+  } finally {
+    saving.value = false
+  }
+}
+
 onMounted(loadGrowthCenters)
 useHead({ title: 'مراکز رشد' })
 </script>
@@ -66,6 +133,7 @@ useHead({ title: 'مراکز رشد' })
         <h1 class="text-2xl font-bold">مراکز رشد</h1>
         <p class="text-sm text-dimmed mt-1">{{ totals }} مرکز رشد زیرمجموعه‌ی این دانشگاه</p>
       </div>
+      <UButton color="primary" icon="i-lucide-plus" @click="openCreateModal">مرکز رشد جدید</UButton>
     </div>
 
     <UCard>
@@ -95,6 +163,9 @@ useHead({ title: 'مراکز رشد' })
             </td>
             <td class="py-3 px-2">
               <div class="flex items-center gap-2">
+                <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-pencil" @click="openEditModal(gc)">
+                  ویرایش
+                </UButton>
                 <UButton
                   size="xs"
                   color="neutral"
@@ -113,5 +184,27 @@ useHead({ title: 'مراکز رشد' })
         </tbody>
       </table>
     </UCard>
+
+    <!-- مودال ایجاد/ویرایش -->
+    <UModal v-model:open="modalOpen" :title="editingId ? 'ویرایش مرکز رشد' : 'مرکز رشد جدید'">
+      <template #body>
+        <div class="space-y-4">
+          <UFormField label="عنوان" required>
+            <UInput v-model="form.title" placeholder="مثلاً: مرکز رشد فناوری اطلاعات" class="w-full" />
+          </UFormField>
+          <UFormField label="توضیحات">
+            <RichTextEditor v-model="form.description" />
+          </UFormField>
+          <div class="flex items-center justify-between">
+            <span class="text-sm">فعال باشد</span>
+            <USwitch v-model="form.isActive" />
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton color="neutral" variant="ghost" @click="modalOpen = false">انصراف</UButton>
+            <UButton color="primary" :loading="saving" @click="saveGrowthCenter">ذخیره</UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

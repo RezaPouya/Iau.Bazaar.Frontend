@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { useLocationService, type IdName } from '~/services/location.service'
 
 // Props
 const props = defineProps<{
@@ -14,6 +15,9 @@ const props = defineProps<{
     description: string
     growthCenterId: number
     growthCenterCommission: number
+    provinceId?: number | null
+    sameProvinceShippingCost?: number
+    otherProvinceShippingCost?: number
     isActive: boolean
   }
   growthCenters: { id: number; title: string; universityName?: string }[]
@@ -25,6 +29,13 @@ const emit = defineEmits<{
   (e: 'save', data: any): void
 }>()
 
+// لیست استان‌ها برای انتخاب مبدأ ارسال شرکت
+const { getProvinces } = useLocationService()
+const provinces = ref<IdName[]>([])
+onMounted(async () => {
+  provinces.value = await getProvinces()
+})
+
 // Form state
 const form = reactive({
   id: null as number | null,
@@ -33,6 +44,9 @@ const form = reactive({
   description: '',
   growthCenterId: 0,
   growthCenterCommission: 0,
+  provinceId: null as number | null,
+  sameProvinceShippingCost: 0,
+  otherProvinceShippingCost: 0,
   isActive: true
 })
 
@@ -47,6 +61,9 @@ watch(
       form.description = data.description || ''
       form.growthCenterId = data.growthCenterId
       form.growthCenterCommission = data.growthCenterCommission || 0
+      form.provinceId = data.provinceId ?? null
+      form.sameProvinceShippingCost = data.sameProvinceShippingCost || 0
+      form.otherProvinceShippingCost = data.otherProvinceShippingCost || 0
       form.isActive = data.isActive
     }
   },
@@ -70,6 +87,9 @@ const resetForm = () => {
   form.description = ''
   form.growthCenterId = props.growthCenters[0]?.id || 0
   form.growthCenterCommission = 0
+  form.provinceId = null
+  form.sameProvinceShippingCost = 0
+  form.otherProvinceShippingCost = 0
   form.isActive = true
 }
 
@@ -80,6 +100,9 @@ const schema = z.object({
   shortDescription: z.string().optional(),
   description: z.string().optional(),
   growthCenterCommission: z.number().min(0, 'کمیسیون باید عددی مثبت باشد').max(100, 'کمیسیون نمی‌تواند بیشتر از ۱۰۰ باشد'),
+  provinceId: z.number().nullable().optional(),
+  sameProvinceShippingCost: z.number().min(0, 'هزینه ارسال نمی‌تواند منفی باشد'),
+  otherProvinceShippingCost: z.number().min(0, 'هزینه ارسال نمی‌تواند منفی باشد'),
   isActive: z.boolean()
 })
 
@@ -103,7 +126,7 @@ const formatCommission = (value: number) => `${value}%`
 <template>
   <UModal :open="open" :title="editingId ? 'ویرایش شرکت' : 'افزودن شرکت'" class="max-w-3xl" @update:open="closeModal">
     <template #body>
-      <UForm :schema="schema" :state="form" @submit="onSubmit" class="space-y-3">
+      <UForm :schema="schema" :state="form" class="space-y-3" @submit="onSubmit">
         <UFormField label="نام شرکت" name="title" required>
           <UInput v-model="form.title" class="w-full text-right" />
         </UFormField>
@@ -137,6 +160,26 @@ const formatCommission = (value: number) => `${value}%`
           </div>
         </UFormField>
 
+        <!-- اضافه شد: مبدأ ارسال و هزینه پستی (برای سفارش‌هایی که چند شرکت دارند و
+             هرکدام بسته‌ی خودشان را جدا ارسال می‌کنند) -->
+        <UFormField label="استان مبدأ ارسال" name="provinceId" help="این شرکت محصولات خود را از کدام استان ارسال می‌کند">
+          <USelect
+            v-model="form.provinceId"
+            :items="[{ label: 'تعیین نشده', value: null }, ...provinces.map(p => ({ label: p.name, value: p.id }))]"
+            class="w-full"
+            :popper="{ placement: 'bottom-end' }"
+          />
+        </UFormField>
+
+        <div class="grid grid-cols-2 gap-3">
+          <UFormField label="هزینه ارسال داخل استان (تومان)" name="sameProvinceShippingCost">
+            <UInput v-model.number="form.sameProvinceShippingCost" type="number" min="0" class="w-full text-left" />
+          </UFormField>
+          <UFormField label="هزینه ارسال بین‌استانی (تومان)" name="otherProvinceShippingCost">
+            <UInput v-model.number="form.otherProvinceShippingCost" type="number" min="0" class="w-full text-left" />
+          </UFormField>
+        </div>
+
         <UFormField label="فعال" name="isActive" class="flex-1">
           <USwitch v-model="form.isActive" />
         </UFormField>
@@ -149,3 +192,5 @@ const formatCommission = (value: number) => `${value}%`
     </template>
   </UModal>
 </template>
+
+

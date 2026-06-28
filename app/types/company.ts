@@ -8,6 +8,11 @@ export interface Company {
   growthCenterName: string
   growthCenterCommission: number
   isActive: boolean
+  // اضافه شد: مبدأ ارسال و هزینه پستی (برای قابلیت تفکیک سفارش/ارسال جدا هر شرکت)
+  provinceId?: number | null
+  provinceName?: string | null
+  sameProvinceShippingCost: number
+  otherProvinceShippingCost: number
   createdAt: string
   createdAtPersian: string
 }
@@ -27,9 +32,14 @@ export interface CreateCompanyInput {
   description?: string
   growthCenterId: number
   growthCenterCommission: number
+  provinceId?: number | null
+  sameProvinceShippingCost: number
+  otherProvinceShippingCost: number
   isActive: boolean
 }
 
 export interface UpdateCompanyInput extends CreateCompanyInput {
   id: number
 }
+
+

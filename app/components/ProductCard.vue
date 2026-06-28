@@ -20,7 +20,7 @@ const formatPrice = (price: number) => {
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
-        <UBadge v-if="product.discountPercent && product.discountPercent > 0" color="error" class="absolute top-2 right-2">
+        <UBadge v-if="product.discountPercent && product.discountPercent > 0" color="secondary" class="absolute top-2 right-2 font-semibold">
           تخفیف {{ product.discountPercent }}%
         </UBadge>
         <UBadge v-if="product.inventoryCount <= 0" color="neutral" class="absolute bottom-2 left-2">
@@ -58,3 +58,5 @@ const formatPrice = (price: number) => {
   overflow: hidden;
 }
 </style>
+
+

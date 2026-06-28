@@ -13,6 +13,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "isomorphic-dompurify": "^2.18.0",
     "@iconify-json/lucide": "^1.2.108",
     "@iconify-json/simple-icons": "^1.2.83",
     "@internationalized/date": "^3.12.1",
@@ -63,3 +64,5 @@
   },
   "packageManager": "pnpm@11.1.3"
 }
+
+

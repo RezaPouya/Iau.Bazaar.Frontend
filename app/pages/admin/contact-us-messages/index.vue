@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { GridFilterOperation } from '~/types/grid'
 import { useAdminContactUsMessageService } from '~/services/admin/contact-us-message.service'
-import type { ContactUsMessageDto, ContactUsMessageStatus, ContactUsMessagePriority, ContactUsMessageCategory } from '~/types/contact-us-message'
-import { ContactUsMessageStatusConfig, ContactUsMessagePriorityConfig, ContactUsMessageCategoryConfig } from '~/types/contact-us-message'
+import type { ContactUsMessageDto } from '~/types/contact-us-message'
+import { ContactUsMessageState, ContactUsMessageStateConfig, contactUsMessageStateOptions } from '~/types/contact-us-message'
 import ContactUsMessageViewModal from '~/components/admin/contact-us-message/ContactUsMessageViewModal.vue'
 
 definePageMeta({
@@ -17,35 +16,26 @@ const messageService = useAdminContactUsMessageService()
 // Stats
 const stats = ref({
   total: 0,
-  pending: 0,
-  read: 0,
-  replied: 0,
-  archived: 0,
-  spam: 0,
+  notSeen: 0,
+  seen: 0,
+  answered: 0,
   today: 0,
-  thisWeek: 0,
-  thisMonth: 0
+  thisWeek: 0
 })
 
-// Columns
+// Columns (بدون «دسته‌بندی»/«اولویت» چون این دو مفهوم در بک‌اند وجود ندارند)
 const columns = [
   { key: 'id', label: 'شناسه', sortable: true },
-  { key: 'fullName', label: 'نام فرستنده', sortable: true },
-  { key: 'subject', label: 'موضوع', sortable: true },
-  { key: 'category', label: 'دسته‌بندی', sortable: true },
-  { key: 'priority', label: 'اولویت', sortable: true },
-  { key: 'status', label: 'وضعیت', sortable: true },
+  { key: 'name', label: 'نام فرستنده', sortable: true },
+  { key: 'subjectTitle', label: 'موضوع', sortable: false },
+  { key: 'state', label: 'وضعیت', sortable: true },
   { key: 'createdAtPersian', label: 'تاریخ ارسال', sortable: true },
   { key: 'actions', label: 'عملیات', sortable: false }
 ]
 
 // Filters
-const filterFullName = ref('')
-const filterEmail = ref('')
-const filterSubject = ref('')
-const filterStatus = ref<ContactUsMessageStatus | null>(null)
-const filterPriority = ref<ContactUsMessagePriority | null>(null)
-const filterCategory = ref<ContactUsMessageCategory | null>(null)
+const filterSearchTerm = ref('')
+const filterState = ref<number | null>(null)
 const dateFrom = ref<string>('')
 const dateTo = ref<string>('')
 
@@ -66,13 +56,13 @@ const selectAll = ref(false)
 const viewModalOpen = ref(false)
 const selectedMessage = ref<ContactUsMessageDto | null>(null)
 
-// Load stats (mock)
+// Load stats — این اندپوینت قبلاً اصلاً در بک‌اند وجود نداشت (فقط با یک کامنت
+// «فرضی» صدا زده می‌شد)؛ در همین دور ساخته شد.
 const loadStats = async () => {
   try {
-    const response = await $fetch('/api/admin/contact-us/stats') // فرضی
-    stats.value = response
-  } catch {
-    // fallback
+    stats.value = await messageService.getStats()
+  } catch (error) {
+    console.error('Error loading stats:', error)
   }
 }
 
@@ -80,44 +70,24 @@ const loadStats = async () => {
 const loadData = async () => {
   loading.value = true
   try {
-    const filters: any[] = []
-    if (filterFullName.value.trim()) {
-      filters.push({ propertyName: 'fullName', operation: GridFilterOperation.Contains, value: filterFullName.value.trim() })
-    }
-    if (filterEmail.value.trim()) {
-      filters.push({ propertyName: 'email', operation: GridFilterOperation.Contains, value: filterEmail.value.trim() })
-    }
-    if (filterSubject.value.trim()) {
-      filters.push({ propertyName: 'subject', operation: GridFilterOperation.Contains, value: filterSubject.value.trim() })
-    }
-    if (filterStatus.value) {
-      filters.push({ propertyName: 'status', operation: GridFilterOperation.Equals, value: filterStatus.value })
-    }
-    if (filterPriority.value) {
-      filters.push({ propertyName: 'priority', operation: GridFilterOperation.Equals, value: filterPriority.value })
-    }
-    if (filterCategory.value) {
-      filters.push({ propertyName: 'category', operation: GridFilterOperation.Equals, value: filterCategory.value })
-    }
-    if (dateFrom.value) {
-      filters.push({ propertyName: 'createdAt', operation: GridFilterOperation.GreaterThanOrEqual, value: dateFrom.value })
-    }
-    if (dateTo.value) {
-      filters.push({ propertyName: 'createdAt', operation: GridFilterOperation.LessThanOrEqual, value: dateTo.value })
-    }
-
-    const request = {
+    // نکته مهم: این فیلدها باید سطح بالا (top-level) ارسال شوند، نه داخل
+    // inputParams.filters — دقیقاً همان درسی که از باگ فیلتر صفحه محصولات گرفتیم.
+    // ContactUsCoreService.GetMessagesAsync مستقیماً همین Property های strongly-typed
+    // را می‌خواند (SearchTerm, State, FromDate, ToDate)، نه آرایه‌ی عمومی filters را.
+    const result = await messageService.getMessagesList({
       page: currentPage.value,
       pageSize: pageSize.value,
+      searchTerm: filterSearchTerm.value.trim() || null,
+      state: filterState.value as any,
+      fromDate: dateFrom.value || null,
+      toDate: dateTo.value || null,
       inputParams: {
-        filters,
+        filters: [],
         sort: sortKey.value && sortDirection.value
           ? { propertyName: sortKey.value, ascending: sortDirection.value === 'asc' }
           : null
       }
-    }
-
-    const result = await messageService.getMessagesList(request)
+    })
     data.value = result.data ?? []
     totals.value = result.totals ?? 0
     currentPage.value = result.page ?? 1
@@ -178,12 +148,8 @@ const applyFilters = () => {
 }
 
 const clearFilters = () => {
-  filterFullName.value = ''
-  filterEmail.value = ''
-  filterSubject.value = ''
-  filterStatus.value = null
-  filterPriority.value = null
-  filterCategory.value = null
+  filterSearchTerm.value = ''
+  filterState.value = null
   dateFrom.value = ''
   dateTo.value = ''
   currentPage.value = 1
@@ -206,7 +172,7 @@ const toggleSelectAll = () => {
     selectedRows.value.clear()
     selectAll.value = false
   } else {
-    data.value.forEach((item) => selectedRows.value.add(item.id))
+    data.value.forEach(item => selectedRows.value.add(item.id))
     selectAll.value = true
   }
 }
@@ -239,10 +205,14 @@ const bulkDelete = async () => {
   })
 }
 
-const bulkUpdateStatus = async (status: ContactUsMessageStatus) => {
+// نکته: نسخه قبلی این تابع {status} می‌فرستاد (فیلدی که در DTO واقعی وجود ندارد).
+// الان شکل درست {id, state} ارسال می‌شود.
+const bulkUpdateState = async (state: number) => {
   if (selectedRows.value.size === 0) return
   try {
-    await Promise.all(Array.from(selectedRows.value).map(id => messageService.updateMessage(id, { status })))
+    await Promise.all(
+      Array.from(selectedRows.value).map(id => messageService.updateMessage({ id, state: state as any }))
+    )
     toast.add({ title: `وضعیت ${selectedRows.value.size} پیام با موفقیت تغییر کرد`, color: 'success' })
     selectedRows.value.clear()
     selectAll.value = false
@@ -283,21 +253,23 @@ const deleteMessage = async (id: number) => {
   })
 }
 
-// Export
+// Export — این اندپوینت هم قبلاً اصلاً در بک‌اند وجود نداشت
+const exporting = ref(false)
 const exportMessages = async () => {
+  exporting.value = true
   try {
-    const filters: any[] = []
-    if (filterFullName.value.trim()) {
-      filters.push({ propertyName: 'fullName', operation: GridFilterOperation.Contains, value: filterFullName.value.trim() })
-    }
-    if (filterStatus.value) {
-      filters.push({ propertyName: 'status', operation: GridFilterOperation.Equals, value: filterStatus.value })
-    }
-    const blob = await $fetch('/api/admin/contact-us/export', { method: 'POST', body: { filters } }) as Blob
+    const blob = await messageService.exportMessages({
+      page: 1,
+      pageSize: 10000,
+      searchTerm: filterSearchTerm.value.trim() || null,
+      state: filterState.value as any,
+      fromDate: dateFrom.value || null,
+      toDate: dateTo.value || null
+    })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `messages_export_${new Date().toISOString().split('T')[0]}.xlsx`
+    link.download = `messages_export_${new Date().toISOString().split('T')[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -305,57 +277,21 @@ const exportMessages = async () => {
     toast.add({ title: 'خروجی با موفقیت ایجاد شد', color: 'success' })
   } catch (error: any) {
     toast.add({ title: error.response?.data?.message || 'خطا در ایجاد خروجی', color: 'error' })
+  } finally {
+    exporting.value = false
   }
 }
 
-// Badge helpers
-const getStatusBadge = (status: ContactUsMessageStatus) => {
-  const config = ContactUsMessageStatusConfig[status]
-  return config || { color: 'neutral', label: status, icon: 'i-lucide-circle' }
+// Badge helper
+const getStateBadge = (state: number) => {
+  return ContactUsMessageStateConfig[state] || { color: 'neutral', label: '—', icon: 'i-lucide-circle' }
 }
 
-const getPriorityBadge = (priority: ContactUsMessagePriority) => {
-  const config = ContactUsMessagePriorityConfig[priority]
-  return config || { color: 'neutral', label: priority, icon: 'i-lucide-circle' }
-}
+const stateFilterOptions = [{ label: 'همه', value: null }, ...contactUsMessageStateOptions]
 
-const getCategoryBadge = (category: ContactUsMessageCategory) => {
-  const config = ContactUsMessageCategoryConfig[category]
-  return config || { label: category, icon: 'i-lucide-circle' }
-}
-
-// Options
-const statusOptions = [
-  { label: 'همه', value: null },
-  { label: 'در انتظار', value: 'pending' },
-  { label: 'خوانده شده', value: 'read' },
-  { label: 'پاسخ داده شده', value: 'replied' },
-  { label: 'بایگانی', value: 'archived' },
-  { label: 'اسپم', value: 'spam' }
-]
-
-const priorityOptions = [
-  { label: 'همه', value: null },
-  { label: 'کم', value: 'low' },
-  { label: 'عادی', value: 'normal' },
-  { label: 'بالا', value: 'high' },
-  { label: 'فوری', value: 'urgent' }
-]
-
-const categoryOptions = [
-  { label: 'همه', value: null },
-  { label: 'عمومی', value: 'general' },
-  { label: 'پشتیبانی', value: 'support' },
-  { label: 'فروش', value: 'sales' },
-  { label: 'فنی', value: 'technical' },
-  { label: 'شکایت', value: 'complaint' },
-  { label: 'پیشنهاد', value: 'suggestion' }
-]
-
-const bulkStatusOptions = [
-  { label: 'خوانده شده', value: 'read', icon: 'i-lucide-eye' },
-  { label: 'بایگانی', value: 'archived', icon: 'i-lucide-archive' },
-  { label: 'اسپم', value: 'spam', icon: 'i-lucide-alert-circle' }
+const bulkStateOptions = [
+  { label: 'مشاهده شده', value: ContactUsMessageState.Seen, icon: 'i-lucide-eye' },
+  { label: 'یادداشت‌گذاری شده', value: ContactUsMessageState.Answered, icon: 'i-lucide-check-check' }
 ]
 
 onMounted(() => {
@@ -370,37 +306,29 @@ onMounted(() => {
       <!-- header -->
       <div class="mb-3 flex justify-between items-center">
         <h1 class="text-xl font-bold">مدیریت پیام‌ها</h1>
-        <UButton color="neutral" variant="outline" size="sm" @click="exportMessages">
+        <UButton color="neutral" variant="outline" size="sm" :loading="exporting" @click="exportMessages">
           <UIcon name="i-lucide-download" class="ml-1 size-4" />
-          خروجی Excel
+          خروجی CSV
         </UButton>
       </div>
 
       <!-- stats -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
         <UCard class="p-2 text-center">
           <div class="text-2xl font-bold text-primary-600">{{ stats.total }}</div>
           <div class="text-xs text-dimmed">کل پیام‌ها</div>
         </UCard>
         <UCard class="p-2 text-center">
-          <div class="text-2xl font-bold text-warning-600">{{ stats.pending }}</div>
-          <div class="text-xs text-dimmed">در انتظار</div>
+          <div class="text-2xl font-bold text-warning-600">{{ stats.notSeen }}</div>
+          <div class="text-xs text-dimmed">مشاهده نشده</div>
         </UCard>
         <UCard class="p-2 text-center">
-          <div class="text-2xl font-bold text-info-600">{{ stats.read }}</div>
-          <div class="text-xs text-dimmed">خوانده شده</div>
+          <div class="text-2xl font-bold text-info-600">{{ stats.seen }}</div>
+          <div class="text-xs text-dimmed">مشاهده شده</div>
         </UCard>
         <UCard class="p-2 text-center">
-          <div class="text-2xl font-bold text-success-600">{{ stats.replied }}</div>
-          <div class="text-xs text-dimmed">پاسخ داده شده</div>
-        </UCard>
-        <UCard class="p-2 text-center">
-          <div class="text-2xl font-bold text-neutral-600">{{ stats.archived }}</div>
-          <div class="text-xs text-dimmed">بایگانی</div>
-        </UCard>
-        <UCard class="p-2 text-center">
-          <div class="text-2xl font-bold text-error-600">{{ stats.spam }}</div>
-          <div class="text-xs text-dimmed">اسپم</div>
+          <div class="text-2xl font-bold text-success-600">{{ stats.answered }}</div>
+          <div class="text-xs text-dimmed">یادداشت‌گذاری شده</div>
         </UCard>
         <UCard class="p-2 text-center">
           <div class="text-2xl font-bold text-primary-600">{{ stats.today }}</div>
@@ -416,7 +344,7 @@ onMounted(() => {
       <div v-if="selectedRows.size > 0" class="mb-3 p-2 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex flex-wrap items-center justify-between gap-2">
         <div class="text-sm"><span class="font-semibold">{{ selectedRows.size }}</span> پیام انتخاب شده</div>
         <div class="flex gap-2">
-          <UDropdownMenu :items="[bulkStatusOptions.map((opt) => ({ label: opt.label, icon: opt.icon, onSelect: () => bulkUpdateStatus(opt.value as ContactUsMessageStatus) }))]">
+          <UDropdownMenu :items="[bulkStateOptions.map((opt) => ({ label: opt.label, icon: opt.icon, onSelect: () => bulkUpdateState(opt.value) }))]">
             <UButton size="sm" color="neutral" variant="outline"> تغییر وضعیت گروهی </UButton>
           </UDropdownMenu>
           <UButton size="sm" color="error" variant="outline" @click="bulkDelete"> حذف گروهی </UButton>
@@ -426,23 +354,11 @@ onMounted(() => {
       <!-- filters -->
       <UCard class="mb-3 p-3">
         <div class="flex flex-wrap gap-2 items-end">
-          <UFormField label="نام فرستنده" class="flex-1 min-w-[120px]">
-            <UInput v-model="filterFullName" placeholder="جستجو..." class="w-full text-right" />
+          <UFormField label="جستجو (نام/ایمیل/تلفن/متن)" class="flex-1 min-w-[200px]">
+            <UInput v-model="filterSearchTerm" placeholder="جستجو..." class="w-full text-right" @keyup.enter="applyFilters" />
           </UFormField>
-          <UFormField label="ایمیل" class="w-40">
-            <UInput v-model="filterEmail" placeholder="ایمیل..." class="w-full text-left" />
-          </UFormField>
-          <UFormField label="موضوع" class="w-40">
-            <UInput v-model="filterSubject" placeholder="موضوع..." class="w-full text-right" />
-          </UFormField>
-          <UFormField label="وضعیت" class="w-28">
-            <USelect v-model="filterStatus" :items="statusOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
-          </UFormField>
-          <UFormField label="اولویت" class="w-24">
-            <USelect v-model="filterPriority" :items="priorityOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
-          </UFormField>
-          <UFormField label="دسته‌بندی" class="w-28">
-            <USelect v-model="filterCategory" :items="categoryOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
+          <UFormField label="وضعیت" class="w-36">
+            <USelect v-model="filterState" :items="stateFilterOptions" class="w-full" :popper="{ placement: 'bottom-end' }" />
           </UFormField>
           <UFormField label="از تاریخ" class="w-32">
             <UInput v-model="dateFrom" type="date" class="w-full" />
@@ -480,34 +396,23 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800" :class="{ 'bg-primary-50 dark:bg-primary-900/10': !item.isSeen }">
+              <tr v-for="item in data" :key="item.id" class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800" :class="{ 'bg-primary-50 dark:bg-primary-900/10': item.state === 1 }">
                 <td class="px-2 py-1.5 text-center">
                   <UCheckbox :model-value="selectedRows.has(item.id)" @update:model-value="toggleSelectRow(item.id)" />
                 </td>
                 <td class="px-3 py-1.5 text-center">{{ item.id }}</td>
                 <td class="px-3 py-1.5 text-right">
                   <div class="flex items-center gap-2">
-                    <span :class="{ 'font-semibold': !item.isSeen }">{{ item.fullName }}</span>
-                    <UBadge v-if="!item.isSeen" size="xs" color="primary" variant="subtle">جدید</UBadge>
+                    <span :class="{ 'font-semibold': item.state === 1 }">{{ item.name }}</span>
+                    <UBadge v-if="item.state === 1" size="xs" color="primary" variant="subtle">جدید</UBadge>
                   </div>
+                  <div class="text-xs text-dimmed">{{ item.email }}</div>
                 </td>
-                <td class="px-3 py-1.5 text-right max-w-[200px] truncate" :class="{ 'font-semibold': !item.isSeen }">{{ item.subject }}</td>
+                <td class="px-3 py-1.5 text-right max-w-[200px] truncate">{{ item.subjectTitle }}</td>
                 <td class="px-3 py-1.5 text-center">
-                  <UBadge variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
-                    <UIcon :name="getCategoryBadge(item.category).icon" class="size-3" />
-                    {{ getCategoryBadge(item.category).label }}
-                  </UBadge>
-                </td>
-                <td class="px-3 py-1.5 text-center">
-                  <UBadge :color="getPriorityBadge(item.priority).color" variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
-                    <UIcon :name="getPriorityBadge(item.priority).icon" class="size-3" />
-                    {{ getPriorityBadge(item.priority).label }}
-                  </UBadge>
-                </td>
-                <td class="px-3 py-1.5 text-center">
-                  <UBadge :color="getStatusBadge(item.status).color" variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
-                    <UIcon :name="getStatusBadge(item.status).icon" class="size-3" />
-                    {{ getStatusBadge(item.status).label }}
+                  <UBadge :color="getStateBadge(item.state).color" variant="subtle" size="sm" class="flex items-center gap-1 w-fit mx-auto">
+                    <UIcon :name="getStateBadge(item.state).icon" class="size-3" />
+                    {{ item.stateTitle }}
                   </UBadge>
                 </td>
                 <td class="px-3 py-1.5 text-center">{{ item.createdAtPersian }}</td>
@@ -542,7 +447,7 @@ onMounted(() => {
       </div>
 
       <!-- modal -->
-      <ContactUsMessageViewModal v-model:open="viewModalOpen" :message="selectedMessage" @message-updated="loadData" @message-deleted="loadData" />
+      <ContactUsMessageViewModal v-model:open="viewModalOpen" :message="selectedMessage" @message-updated="loadData(); loadStats()" @message-deleted="loadData(); loadStats()" />
     </div>
   </ClientOnly>
 </template>

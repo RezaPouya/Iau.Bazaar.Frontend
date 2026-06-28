@@ -6,6 +6,11 @@ export interface AuthUser {
   fullName: string
   userName: string
   phoneNumber: string
+  // اضافه شد: شناسه‌ی دانشگاه/مرکز رشد/شرکت خودِ کاربر فعلی (هرکدام فقط برای نقش
+  // مرتبط مقداردهی می‌شود، بقیه null هستند)
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
 }
 
 export interface LoginResponse {
@@ -18,4 +23,9 @@ export interface LoginResponse {
   fullName: string
   userName: string
   phoneNumber: string
+  universityId?: number | null
+  growthCenterId?: number | null
+  companyId?: number | null
 }
+
+

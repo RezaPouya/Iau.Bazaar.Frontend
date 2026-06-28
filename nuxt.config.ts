@@ -1,4 +1,14 @@
 // nuxt.config.ts
+//
+// نکته‌ی بسیار مهم: apiBase، آدرس پروکسی /medias، و CSP (در ادامه‌ی همین فایل) همگی
+// قبلاً به‌صورت ثابت (hardcode) روی «https://localhost:7139» تنظیم شده بودند. یعنی به
+// محض Deploy کردن سایت روی هر آدرس دیگری غیر از localhost (هر سرور واقعی)، تمام
+// درخواست‌های API و بارگذاری تصاویر خراب می‌شدند. الان این آدرس از متغیر محیطی
+// BACKEND_BASE_URL خوانده می‌شود (با همان localhost به‌عنوان مقدار پیش‌فرض، فقط برای
+// راحتی توسعه محلی) — هنگام Deploy واقعی، حتماً این env var را به آدرس واقعی بک‌اند
+// تنظیم کنید (مثلاً BACKEND_BASE_URL=https://api.iaubazaar.ir)
+const backendBaseUrl = process.env.BACKEND_BASE_URL || 'https://localhost:7139'
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
@@ -31,7 +41,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: 'https://localhost:7139/api'
+      // مقدار نهایی را می‌توان هنگام اجرا هم با env var استاندارد Nuxt یعنی
+      // NUXT_PUBLIC_API_BASE بازنویسی کرد (بدون نیاز به Build مجدد)
+      apiBase: `${backendBaseUrl}/api`
     }
   },
 
@@ -43,7 +55,7 @@ export default defineNuxtConfig({
 
   nitro: {
     routeRules: {
-      '/medias/**': { proxy: 'https://localhost:7139/medias/**' },
+      '/medias/**': { proxy: `${backendBaseUrl}/medias/**` },
       ...(import.meta.env.PROD ? {
         '/**': {
           headers: {
@@ -51,7 +63,10 @@ export default defineNuxtConfig({
             'X-Frame-Options': 'DENY',
             'X-XSS-Protection': '1; mode=block',
             'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://localhost:7139"
+            // نکته: cdn.jsdelivr.net برای فونت Vazirmatn اضافه شده (هم برای CSS با
+            // @import و هم برای خودِ فایل‌های فونت). اگر فونت را بعداً self-host کردید،
+            // می‌توانید این دو مورد را حذف کنید.
+            'Content-Security-Policy': `default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' data: https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' ${backendBaseUrl}`
           }
         }
       } : {})
@@ -65,5 +80,7 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
-  },
+  }
 })
+
+

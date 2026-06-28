@@ -64,7 +64,10 @@ export const useAuthStore = defineStore('auth', () => {
       panelUrl: data.panelUrl,
       fullName: data.fullName,
       userName: data.userName,
-      phoneNumber: data.phoneNumber
+      phoneNumber: data.phoneNumber,
+      universityId: data.universityId ?? null,
+      growthCenterId: data.growthCenterId ?? null,
+      companyId: data.companyId ?? null
     }
 
     persistSession({
@@ -254,3 +257,5 @@ export const useAuthStore = defineStore('auth', () => {
     scheduleRefresh
   }
 })
+
+

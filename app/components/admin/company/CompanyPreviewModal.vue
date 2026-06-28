@@ -12,12 +12,17 @@ const emit = defineEmits<{
 const closeModal = () => {
   emit('update:open', false)
 }
+
+const { sanitize } = useSanitizedHtml()
+const sanitizedHtml = computed(() => sanitize(props.htmlContent))
 </script>
 
 <template>
   <UModal :open="open" title="پیش‌نمایش توضیحات" class="max-w-3xl" @update:open="closeModal">
     <template #body>
-      <div class="prose prose-sm dark:prose-invert max-w-none" v-html="htmlContent" />
+      <div class="prose prose-sm dark:prose-invert max-w-none" v-html="sanitizedHtml" />
     </template>
   </UModal>
 </template>
+
+
