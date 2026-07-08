@@ -45,16 +45,14 @@ const onSubmit = () => {
         <p class="text-xs text-dimmed">محصول: {{ file.productId }}</p>
 
         <UFormField label="نتیجه تایید" required>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <URadio v-model="approved" :value="true" />
-              <span>تایید</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <URadio v-model="approved" :value="false" />
-              <span>رد</span>
-            </label>
-          </div>
+          <URadioGroup
+            v-model="approved"
+            orientation="horizontal"
+            :items="[
+              { label: 'تایید', value: true },
+              { label: 'رد', value: false }
+            ]"
+          />
         </UFormField>
 
         <UFormField v-if="!approved" label="دلیل رد" required>
@@ -72,3 +70,5 @@ const onSubmit = () => {
     </template>
   </UModal>
 </template>
+
+

@@ -95,14 +95,13 @@ function isActive(item: any) {
   return route.path.startsWith(item.to)
 }
 
-definePageMeta({
-  ssr: false // Disable server-side rendering for this page
-})
+// توجه: definePageMeta در layout معتبر نیست و اثری ندارد؛ غیرفعال‌سازی SSR برای
+// پنل ادمین از طریق ClientOnly (پایین) انجام می‌شود.
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="admin-panel" fallback-tag="div" fallback="بارگذاری ...">
+  <ClientOnly fallback-tag="div" fallback="بارگذاری ...">
+    <div class="admin-panel">
       <div class="flex h-screen w-full overflow-hidden">
         <!-- Sidebar -->
         <aside
@@ -231,3 +230,5 @@ definePageMeta({
   font-family: IRAN, sans-serif;
 }
 </style>
+
+

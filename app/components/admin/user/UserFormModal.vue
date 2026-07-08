@@ -68,7 +68,7 @@ const fetchUniversities = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    universities.value = (response.data.data || []).map((u: any) => ({ id: u.id, title: u.title }))
+    universities.value = (response.data.data?.data || []).map((u: any) => ({ id: u.id, title: u.title }))
   } catch (error) {
     console.error('خطا در دریافت دانشگاه‌ها', error)
   }
@@ -81,7 +81,7 @@ const fetchGrowthCenters = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    growthCenters.value = (response.data.data || []).map((gc: any) => ({
+    growthCenters.value = (response.data.data?.data || []).map((gc: any) => ({
       id: gc.id,
       title: gc.title,
       universityName: gc.universityName
@@ -98,7 +98,7 @@ const fetchCompanies = async () => {
       pageSize: 1000,
       inputParams: { filters: [], sort: null }
     })
-    companies.value = (response.data.data || []).map((c: any) => ({ id: c.id, title: c.title }))
+    companies.value = (response.data.data?.data || []).map((c: any) => ({ id: c.id, title: c.title }))
   } catch (error) {
     console.error('خطا در دریافت شرکت‌ها', error)
   }
@@ -334,3 +334,5 @@ const companyOptions = computed(() => companies.value.map((c) => ({ label: c.tit
     </template>
   </UModal>
 </template>
+
+
